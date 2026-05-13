@@ -5,11 +5,81 @@ import 'package:mobile/widgets/foodrekomendasi.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:mobile/widgets/foodpopuler.dart';
 import 'package:mobile/Pages/detailmenupage.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobile/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
-class HomeContent extends StatelessWidget {
+class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
-   
-   @override
+
+  @override
+  State<HomeContent> createState() => HomeContentState();
+}
+
+class HomeContentState extends State<HomeContent> {
+  int kalori = 0;
+  double protein = 0;
+  double karbo = 0;
+  double lemak = 0;
+  int kaloriDikonsumsi = 0;
+  int sisaKalori = 0;
+
+  double proteinDikonsumsi = 0;
+  double karboDikonsumsi = 0;
+  double lemakDikonsumsi = 0;
+
+  double proteinPercent = 0.2;
+  double karboPercent = 0.2;
+  double lemakPercent = 0.2;
+
+  @override
+  void initState() {
+    super.initState();
+    getHealthProfile();
+  }
+
+  Future<void> getHealthProfile() async {
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/api/health-profile"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        final data = jsonDecode(response.body);
+
+        final health = data['data'];
+
+        setState(() {
+          kalori = health['kalori'];
+          protein = double.parse(
+            health['protein']
+          );
+          karbo = double.parse(
+            health['karbo']
+          );
+          lemak = double.parse(
+            health['lemak']
+          );
+        });
+      }
+
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView(
       children: [
@@ -60,7 +130,7 @@ class HomeContent extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "1200",
+                            "$sisaKalori",
                             style: TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
@@ -77,7 +147,7 @@ class HomeContent extends StatelessWidget {
 
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -94,7 +164,7 @@ class HomeContent extends StatelessWidget {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  "800 kcal",
+                                  "$kaloriDikonsumsi",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -127,7 +197,7 @@ class HomeContent extends StatelessWidget {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  "2000 kcal",
+                                  "$kalori kcal",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -157,11 +227,11 @@ class HomeContent extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                buildNutrisi("Protein", 0.4, "40g / 100g"),
+                buildNutrisi("Protein", proteinPercent, "$proteinDikonsumsi g / $protein g"),
                 const SizedBox(height: 8),
-                buildNutrisi("Karbo", 0.6, "150g / 250g"),
+                buildNutrisi("Karbo", karboPercent, "$karboDikonsumsi g / $karbo g"),
                 const SizedBox(height: 8),
-                buildNutrisi("Lemak", 0.3, "30g / 70g"),
+                buildNutrisi("Lemak", lemakPercent, "$lemakDikonsumsi g / $lemak g"),
               ],
             ),
           ),
@@ -224,7 +294,7 @@ class HomeContent extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => HomePage(initialIndex: 1),
+                      builder: (context) => PembeliHomePage(initialIndex: 1),
                     ),
                   );
                 },
@@ -345,7 +415,7 @@ class HomeContent extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => HomePage(initialIndex: 1),
+                      builder: (context) => PembeliHomePage(initialIndex: 1),
                     ),
                   );
                 },

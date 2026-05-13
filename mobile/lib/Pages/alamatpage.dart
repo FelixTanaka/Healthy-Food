@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import '../widgets/editprofile.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:mobile/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class AlamatPage extends StatefulWidget {
   const AlamatPage({super.key});
@@ -9,10 +14,164 @@ class AlamatPage extends StatefulWidget {
 }
 
 class AlamatPageState extends State<AlamatPage> {
-  List<String> alamatList = [
-    "Jl. Mangga No 1",
-    "Jl. Apel No 2",
-  ];
+  List<dynamic> alamatList = [];
+
+  Future<void> getAlamat() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+      
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/api/alamat"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          alamatList = data['data'];
+        });
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getAlamat();
+  }
+
+  Future<void> updateAlamat(int id, String alamatBaru) async {
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.put(
+        Uri.parse("${ApiService.baseUrl}/api/alamat/$id"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: {
+          "alamat": alamatBaru,
+        },
+      );
+
+      if (response.statusCode == 200) {  
+        Fluttertoast.showToast(
+          msg: "Alamat berhasil diupdate 🎉",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+        getAlamat();
+      }
+
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> deleteAlamat(int id) async {
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.delete(
+        Uri.parse("${ApiService.baseUrl}/api/alamat/$id"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        Fluttertoast.showToast(
+          msg: "Alamat berhasil dihapus 🗑️",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+
+        getAlamat();
+
+      } else {
+
+        Fluttertoast.showToast(
+          msg: "Gagal menghapus alamat",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+
+      }
+
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> tambahAlamatApi(String alamat) async {
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/api/alamat"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: {
+          "alamat": alamat,
+        },
+      );
+
+      if (response.statusCode == 201) {
+
+        Fluttertoast.showToast(
+          msg: "Alamat berhasil ditambahkan 🎉",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+
+        getAlamat();
+
+      } else {
+
+        Fluttertoast.showToast(
+          msg: "Gagal menambahkan alamat",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+
+      }
+
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
 
   void tambahAlamat() {
     TextEditingController controller = TextEditingController();
@@ -78,11 +237,18 @@ class AlamatPageState extends State<AlamatPage> {
                             foregroundColor: Colors.white,
                           ),
                           onPressed: () {
-                            if (controller.text.isEmpty) return; 
+                            if (controller.text.isEmpty) return;
 
                             setState(() {
-                              alamatList.add(controller.text);
-                            });
+                              alamatList.add({
+                                'id': DateTime.now().millisecondsSinceEpoch,
+                                'alamat': controller.text,
+                              });
+                            }); 
+
+                            tambahAlamatApi(
+                              controller.text,
+                            );
 
                             Navigator.pop(context); 
                           },
@@ -145,7 +311,7 @@ class AlamatPageState extends State<AlamatPage> {
               children: [
                 Expanded(
                     child: Text(
-                      alamatList[index],
+                      alamatList[index]['alamat'],
                       style: const TextStyle(fontSize: 14),
                     ),
                 ),
@@ -156,11 +322,15 @@ class AlamatPageState extends State<AlamatPage> {
                         showEditField(
                           context,
                           "Alamat",
-                          alamatList[index],
+                          alamatList[index]['alamat'],
                           (value) {
                             setState(() {
-                              alamatList[index] = value; 
+                              alamatList[index]['alamat'] = value;
                             });
+                            updateAlamat(
+                              alamatList[index]['id'],
+                              value,
+                            );
                           },
                         );
                       },
@@ -168,7 +338,10 @@ class AlamatPageState extends State<AlamatPage> {
                     ),
                     IconButton(
                       onPressed: () {
-                        // nanti logic delete
+                        
+                        deleteAlamat(
+                          alamatList[index]['id'],
+                        );
                       },
                       icon: const Icon(Icons.delete, color: Colors.red),
                     ),

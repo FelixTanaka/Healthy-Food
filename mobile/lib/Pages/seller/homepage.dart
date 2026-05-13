@@ -5,17 +5,17 @@ import 'package:mobile/Pages/seller/profiletoko.dart';
 import 'package:mobile/Pages/seller/homecontent.dart';
 import 'package:mobile/Pages/seller/pesananpage.dart';
 
-class HomePage extends StatefulWidget {
+class SellerHomePage extends StatefulWidget {
   final int initialIndex;
 
-  const HomePage({super.key, this.initialIndex = 0});
+  const SellerHomePage({super.key, this.initialIndex = 0});
 
   @override
-  State<HomePage> createState() => HomePageState();
+  State<SellerHomePage> createState() => SellerHomePageState();
   
 }
 
-class HomePageState extends State<HomePage> {
+class SellerHomePageState extends State<SellerHomePage> {
    int selectedIndex = 0;
 
   final List<Widget> pages = const [

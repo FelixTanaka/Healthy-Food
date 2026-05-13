@@ -11,6 +11,11 @@ dependencies:
     sdk: flutter
 
   percent_indicator: ^4.2.3
+  http: ^1.2.1
+  fluttertoast: ^8.2.6
+  shared_preferences: ^2.2.2
+  image_picker: ^1.1.2
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

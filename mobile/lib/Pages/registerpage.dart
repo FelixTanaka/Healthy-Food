@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/loginpage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:mobile/services/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class RegisterPage extends StatefulWidget {
     const RegisterPage({super.key});
@@ -15,6 +19,65 @@ class RegisterPageState extends State<RegisterPage> {
     final TextEditingController phoneController = TextEditingController();
 
     bool isPasswordHidden = true;
+
+    final FToast fToast = FToast();
+    
+    @override
+    void initState() {
+      super.initState();
+      fToast.init(context);
+    }
+
+    Future<void> register() async {
+      try {
+        final url = Uri.parse(
+          "${ApiService.baseUrl}/api/register-pembeli"
+        );
+
+        final response = await http.post(
+          url,
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode({
+            "username": usernameController.text,
+            "email": emailController.text,
+            "no_telp": phoneController.text,
+            "password": passwordController.text,
+          }),
+        );
+
+        debugPrint("STATUS: ${response.statusCode}");
+        debugPrint("BODY: ${response.body}");
+
+        if (!mounted) return;
+
+        if (response.statusCode == 200 ||
+          response.statusCode == 201) {
+
+          Fluttertoast.showToast(
+            msg: "Register berhasil 🎉",
+          );
+
+          Future.delayed(const Duration(seconds: 2), () {
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LoginPage(),
+              ),
+            );
+          });
+        } else {
+          Fluttertoast.showToast(
+            msg: "Register gagal ❌",
+          );
+        }
+      } catch (e) {
+        debugPrint("ERROR: $e");
+      }
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -75,7 +138,7 @@ class RegisterPageState extends State<RegisterPage> {
                                 labelText: "Email",
                                 hintText: "nama@gmail.com",
 
-                                filled: true, // wajib true supaya fillColor aktif
+                                filled: true, 
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -109,7 +172,7 @@ class RegisterPageState extends State<RegisterPage> {
                                 decoration: InputDecoration(
                                 labelText: "Password",
                                 hintText: "Masukkan password",
-                                filled: true, // wajib true supaya fillColor aktif
+                                filled: true, 
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -140,15 +203,7 @@ class RegisterPageState extends State<RegisterPage> {
                                     foregroundColor: Colors.white,
                                 ),
                                 onPressed: () {
-                                  String username = usernameController.text;
-                                  String email = emailController.text;
-                                  String phone = phoneController.text;
-                                  String password = passwordController.text;
-
-                                  debugPrint("Username: $username");
-                                  debugPrint("Email: $email");
-                                  debugPrint("Phone: $phone");
-                                  debugPrint("Password: $password");
+                                  register();
                                 },
                                 child: const Text("Register", style: TextStyle(fontSize: 16),),
                             ),
