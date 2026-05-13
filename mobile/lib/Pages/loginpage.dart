@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/registerpage.dart';
 import 'package:mobile/Pages/homepage.dart';
+import 'package:mobile/Pages/seller/homepage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mobile/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
     const LoginPage({super.key});
@@ -14,6 +20,66 @@ class LoginPageState extends State<LoginPage> {
     final TextEditingController passwordController = TextEditingController();
 
     bool isPasswordHidden = true;
+
+    Future<void> login() async {
+      try {
+        final response = await http.post(
+          Uri.parse("${ApiService.baseUrl}/api/login"),
+          headers: {
+            "Accept": "application/json",
+          },
+          body: {
+            "email": emailController.text,
+            "password": passwordController.text,
+          },
+        );
+
+        if (!mounted) return;
+
+        final data = jsonDecode(response.body);
+
+        debugPrint(response.body);
+        debugPrint(response.statusCode.toString());
+
+        if (response.statusCode == 200) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', data['token']);
+
+          final user = data['user'];
+
+          String role = user['role']['nama_role'];
+
+          Fluttertoast.showToast(
+            msg: "Login berhasil 🎉",
+          );
+
+          if (role == "pembeli") {
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PembeliHomePage(),
+              ),
+            );
+
+          } else if (role == "seller") {
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SellerHomePage(),
+              ),
+            );
+          }
+        } else {
+          Fluttertoast.showToast(
+            msg: "Login gagal",
+          );
+        }
+      } catch (e) {
+        debugPrint("ERROR: $e");
+      }
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -107,12 +173,7 @@ class LoginPageState extends State<LoginPage> {
                                     foregroundColor: Colors.white,
                                 ),
                                 onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const HomePage(),
-                                    ),
-                                  );
+                                  login();
                                 },
                                 child: const Text("Login", style: TextStyle(fontSize: 16),),
                             ),

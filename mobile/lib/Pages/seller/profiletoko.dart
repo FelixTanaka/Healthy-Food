@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/widgets/editprofile.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile/services/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProfileToko extends StatefulWidget {
   const ProfileToko({super.key});
@@ -9,13 +16,157 @@ class ProfileToko extends StatefulWidget {
 }
 
 class ProfileTokoState extends State<ProfileToko> {
-  String namaToko = "Warung Felix";
-  String deskripsi = "Menyediakan makanan enak dan murah";
-  String alamat = "Jl. Kaliurang No. 10";
-  String jamBuka = "08:00";
-  String jamTutup = "22:00";
+  String namaToko = "";
+  String deskripsi = "";
+  String alamat = "";
+  String jamBuka = "";
+  String jamTutup = "";
+  String fotoToko = "";
 
-  String fotoToko = "assets/images/profile.jpg";
+  @override
+  void initState() {
+    super.initState();
+
+    getSellerProfile();
+  }
+
+  Future<String?> getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    return prefs.getString('token');
+  }
+
+  Future<void> getSellerProfile() async {
+    String? token = await getToken();
+
+    final response = await http.get(
+      Uri.parse("${ApiService.baseUrl}/api/seller/profile"),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      setState(() {
+        namaToko = data['data']['nama_toko'] ?? "";
+        deskripsi = data['data']['deskripsi'] ?? "";
+        alamat = data['data']['alamat'] ?? "";
+        jamBuka = data['data']['jam_buka'] ?? "";
+        jamTutup = data['data']['jam_tutup'] ?? "";
+        fotoToko = data['data']['foto_toko'] ?? "";
+      });
+    }
+  }
+
+  Future<void> updateSellerProfile(
+    Map<String, dynamic> body,
+  ) async {
+    String? token = await getToken();
+
+    final response = await http.post(
+      Uri.parse("${ApiService.baseUrl}/api/seller/profile"),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: body,
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      Fluttertoast.showToast(
+        msg: data['message'],
+        gravity: ToastGravity.TOP,
+        toastLength: Toast.LENGTH_SHORT,
+      );
+    } else {
+      Fluttertoast.showToast(
+        msg: "Gagal update profile toko",
+        gravity: ToastGravity.TOP,
+        toastLength: Toast.LENGTH_SHORT,
+      );
+    }
+  }
+
+  Future<void> pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+
+    final pickedFile = await picker.pickImage(
+      source: source,
+      imageQuality: 70,
+    );
+
+    if (pickedFile == null) return;
+
+    File imageFile = File(pickedFile.path);
+
+    String? token = await getToken();
+
+    var request = http.MultipartRequest(
+      "POST",
+      Uri.parse("${ApiService.baseUrl}/api/seller/upload-photo"),
+    );
+
+    request.headers['Authorization'] = "Bearer $token";
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'foto_toko',
+        imageFile.path,
+      ),
+    );
+
+    var response = await request.send();
+
+    if (response.statusCode == 200) {
+      Fluttertoast.showToast(
+        msg: "Foto toko berhasil diupload",
+      );
+
+      getSellerProfile();
+    } else {
+      Fluttertoast.showToast(
+        msg: "Gagal upload foto",
+      );
+    }
+  }
+
+  void showImagePickerOption() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text("Kamera"),
+                onTap: () {
+                  Navigator.pop(context);
+
+                  pickImage(ImageSource.camera);
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.photo),
+                title: const Text("Galeri"),
+                onTap: () {
+                  Navigator.pop(context);
+
+                  pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget buildItem({
     required String label,
@@ -85,11 +236,28 @@ class ProfileTokoState extends State<ProfileToko> {
 
             GestureDetector(
               onTap: () {
-                // nanti bisa tambah image picker
+                showImagePickerOption();
               },
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage: AssetImage(fotoToko),
+                backgroundColor: Colors.orangeAccent,
+                backgroundImage: fotoToko.isNotEmpty
+                    ? NetworkImage(
+                        "${ApiService.baseUrl}/storage/$fotoToko",
+                      )
+                    : null,
+                child: fotoToko.isEmpty
+                    ? Text(
+                        namaToko.isNotEmpty
+                            ? namaToko[0].toUpperCase()
+                            : "T",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
               ),
             ),
 
@@ -114,6 +282,10 @@ class ProfileTokoState extends State<ProfileToko> {
                   setState(() {
                     namaToko = value;
                   });
+
+                  updateSellerProfile({
+                    "nama_toko": value,
+                  });
                 });
               },
             ),
@@ -126,6 +298,9 @@ class ProfileTokoState extends State<ProfileToko> {
                 showEditField(context, "Deskripsi", deskripsi, (value) {
                   setState(() {
                     deskripsi = value;
+                  });
+                  updateSellerProfile({
+                    "deskripsi": value,
                   });
                 });
               },
@@ -140,6 +315,9 @@ class ProfileTokoState extends State<ProfileToko> {
                   setState(() {
                     alamat = value;
                   });
+                  updateSellerProfile({
+                    "alamat": value,
+                  });
                 });
               },
             ),
@@ -152,6 +330,9 @@ class ProfileTokoState extends State<ProfileToko> {
                 showEditField(context, "Jam Buka", jamBuka, (value) {
                   setState(() {
                     jamBuka = value;
+                  });
+                  updateSellerProfile({
+                    "jam_buka": value,
                   });
                 });
               },
@@ -166,10 +347,12 @@ class ProfileTokoState extends State<ProfileToko> {
                   setState(() {
                     jamTutup = value;
                   });
+                  updateSellerProfile({
+                    "jam_tutup": value,
+                  });
                 });
               },
             ),
-
             const SizedBox(height: 30),
           ],
         ),

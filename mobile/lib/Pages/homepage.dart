@@ -7,20 +7,20 @@ import 'package:mobile/Pages/chatbotpage.dart';
 import 'package:mobile/Pages/menupage.dart';
 import 'package:mobile/Pages/riwayatpage.dart';
 
-class HomePage extends StatefulWidget {
+class PembeliHomePage extends StatefulWidget {
   final int initialIndex;
 
-  const HomePage({super.key, this.initialIndex = 0});
+  const PembeliHomePage({super.key, this.initialIndex = 0});
 
   @override
-  State<HomePage> createState() => HomePageState();
+  State<PembeliHomePage> createState() => PembeliHomePageState();
   
 }
 
-class HomePageState extends State<HomePage> {
+class PembeliHomePageState extends State<PembeliHomePage> {
    int selectedIndex = 0;
 
-  final List<Widget> pages = const [
+  final List<Widget> pages = [
     HomeContent(),
     MenuPage(),
     RiwayatPage(),

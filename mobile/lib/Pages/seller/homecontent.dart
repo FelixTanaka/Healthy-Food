@@ -15,25 +15,10 @@ class MenuPageState extends State<MenuPage> {
       "name": "Nasi Goreng",
       "price": "15.000",
       "image": "assets/images/ayam.jpg",
-      "description": "Nasi goreng spesial dengan bumbu khas Indonesia, dilengkapi telur dan ayam suwir.",
+      "description": "Nasi goreng spesial dengan bumbu khas Indonesia",
       "category": "Makanan",
       "rating": 4.5,
-    },
-    {
-      "name": "Mie Ayam",
-      "price": "12.000",
-      "image": "assets/images/ayam.jpg",
-      "description": "Mie ayam gurih dengan topping ayam manis dan kuah kaldu yang lezat.",
-      "category": "Makanan",
-      "rating": 4.3,
-    },
-    {
-      "name": "Ayam Geprek",
-      "price": "18.000",
-      "image": "assets/images/ayam.jpg",
-      "description": "Ayam crispy dengan sambal geprek pedas, cocok untuk pecinta pedas.",
-      "category": "Makanan",
-      "rating": 4.7,
+      "status": "Tersedia",
     },
   ];
 
@@ -135,10 +120,51 @@ class MenuPageState extends State<MenuPage> {
                                 item["name"],
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
+
                               const SizedBox(height: 4),
-                              Text("Rp ${item["price"]}"),
+
+                              Text(
+                                "Rp ${item["price"]}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    color: Colors.orange,
+                                    size: 16,
+                                  ),
+
+                                  const SizedBox(width: 3),
+
+                                  Text(
+                                    item["rating"].toString(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 10),
+
+                                  Text(
+                                    item["status"] ?? "Tersedia",
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.blueGrey,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),

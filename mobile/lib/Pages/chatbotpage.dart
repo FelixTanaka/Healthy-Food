@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:mobile/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -10,33 +14,62 @@ class ChatPage extends StatefulWidget {
 class ChatPageState extends State<ChatPage> {
   final TextEditingController controller = TextEditingController();
 
-  List<Map<String, dynamic>> messages = [
-    {
-      "text": "Halo! Saya AI Diet Assistant 🤖",
-      "isUser": false,
-    }
-  ];
+  List<Map<String, dynamic>> messages = [];
 
-  void sendMessage() {
+  Future<void> sendMessage() async {
+
     if (controller.text.isEmpty) return;
+
+    String userMessage = controller.text;
 
     setState(() {
       messages.add({
-        "text": controller.text,
+        "text": userMessage,
         "isUser": true,
       });
     });
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    controller.clear();
+
+    try {
+      final prefs =
+        await SharedPreferences.getInstance();
+
+      String? token =
+          prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/api/chatbot"),
+
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+
+        body: jsonEncode({
+          "message": userMessage,
+        }),
+      );
+     
+      final data = jsonDecode(response.body);
+
       setState(() {
         messages.add({
-          "text": "Coba makan lebih banyak protein ya 💪",
+          "text": data["reply"],
           "isUser": false,
         });
       });
-    });
 
-    controller.clear();
+    } catch (e) {
+
+      setState(() {
+        messages.add({
+          "text": "Terjadi kesalahan 😢",
+          "isUser": false,
+        });
+      });
+    }
   }
 
   @override
@@ -119,7 +152,9 @@ class ChatPageState extends State<ChatPage> {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  onPressed: sendMessage,
+                  onPressed: (){
+                    sendMessage();
+                  },
                   icon: const Icon(Icons.send, color: Colors.orange),
                 ),
               ],
