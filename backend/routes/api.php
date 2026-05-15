@@ -47,6 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/makanan', [MakananController::class, 'store']);
 
+    Route::get('/makanan', [MakananController::class, 'makananSeller']);
+
+    Route::post('/makanan/{id}', [MakananController::class, 'update']);
+
+    Route::delete('/makanan/{id}', [MakananController::class, 'destroy']);
+
 });
 
 Route::middleware('auth:sanctum')->group(function () {
