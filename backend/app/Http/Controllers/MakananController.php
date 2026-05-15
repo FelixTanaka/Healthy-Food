@@ -12,7 +12,6 @@ class MakananController extends Controller
 {
     public function store(Request $request)
     {
-        dd($request->all());
         $request->validate([
             'kategori_id' => 'required',
             'nama_makanan' => 'required',
@@ -28,11 +27,11 @@ class MakananController extends Controller
         $gambar->storeAs('makanan', $namaGambar, 'public');
 
         $response = Http::asForm()->post(
-            'https://api.spoonacular.com/recipes/analyzeNutrition',
+            'https://api.spoonacular.com/recipes/parseIngredients?includeNutrition=true&apiKey=' . env('SPOONACULAR_API_KEY'),
             [
-                'apiKey' => env('SPOONACULAR_API_KEY'),
+                'ingredientList' => $request->bahan,
 
-                'ingredients' => $request->bahan,
+                'servings' => 1,
             ]
         );
 
@@ -43,36 +42,29 @@ class MakananController extends Controller
         $lemak = 0;
         $karbohidrat = 0;
 
-        if (isset($nutrition['calories'])) {
-            $kalori = (float) filter_var(
-                $nutrition['calories'],
-                FILTER_SANITIZE_NUMBER_FLOAT,
-                FILTER_FLAG_ALLOW_FRACTION
-            );
-        }
+        foreach ($nutrition as $ingredient) {
 
-        if (isset($nutrition['protein'])) {
-            $protein = (float) filter_var(
-                $nutrition['protein'],
-                FILTER_SANITIZE_NUMBER_FLOAT,
-                FILTER_FLAG_ALLOW_FRACTION
-            );
-        }
+            if (isset($ingredient['nutrition']['nutrients'])) {
 
-        if (isset($nutrition['fat'])) {
-            $lemak = (float) filter_var(
-                $nutrition['fat'],
-                FILTER_SANITIZE_NUMBER_FLOAT,
-                FILTER_FLAG_ALLOW_FRACTION
-            );
-        }
+                foreach ($ingredient['nutrition']['nutrients'] as $nutrient) {
 
-        if (isset($nutrition['carbs'])) {
-            $karbohidrat = (float) filter_var(
-                $nutrition['carbs'],
-                FILTER_SANITIZE_NUMBER_FLOAT,
-                FILTER_FLAG_ALLOW_FRACTION
-            );
+                    if ($nutrient['name'] == 'Calories') {
+                        $kalori += $nutrient['amount'];
+                    }
+
+                    if ($nutrient['name'] == 'Protein') {
+                        $protein += $nutrient['amount'];
+                    }
+
+                    if ($nutrient['name'] == 'Fat') {
+                        $lemak += $nutrient['amount'];
+                    }
+
+                    if ($nutrient['name'] == 'Carbohydrates') {
+                        $karbohidrat += $nutrient['amount'];
+                    }
+                }
+            }
         }
 
         $seller = Seller::where('user_id', Auth::id())->first();
@@ -94,6 +86,8 @@ class MakananController extends Controller
 
             'kalori' => $kalori,
 
+            'bahan' => $request->bahan,
+
             'protein' => $protein,
 
             'lemak' => $lemak,
@@ -105,6 +99,156 @@ class MakananController extends Controller
             'message' => 'Makanan berhasil ditambahkan',
             'data' => $makanan,
             'nutrition' => $nutrition,
+        ], 200);
+    }
+
+    public function makananSeller()
+    {
+        $seller = Seller::where('user_id', Auth::id())->first();
+
+        $makanan = Makanan::with(['kategori', 'seller'])
+            ->where('seller_id', $seller->id)
+            ->get();
+
+        return response()->json([
+            'message' => 'Makanan berhasil diambil',
+            'data' => $makanan
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $seller = Seller::where('user_id', Auth::id())->first();
+
+        $makanan = Makanan::where('seller_id', $seller->id)
+            ->where('id', $id)
+            ->first();
+
+        if (!$makanan) {
+            return response()->json([
+                'message' => 'Makanan tidak ditemukan'
+            ], 404);
+        }
+
+        $request->validate([
+            'kategori_id' => 'nullable',
+            'nama_makanan' => 'nullable',
+            'deskripsi' => 'nullable',
+            'harga' => 'nullable',
+            'bahan' => 'nullable',
+            'gambar_makanan' => 'nullable|image|mimes:jpg,jpeg,png',
+        ]);
+
+        $kalori = $makanan->kalori;
+        $protein = $makanan->protein;
+        $lemak = $makanan->lemak;
+        $karbohidrat = $makanan->karbohidrat;
+
+        if ($request->filled('bahan')) {
+
+            $response = Http::asForm()->post(
+                'https://api.spoonacular.com/recipes/parseIngredients?includeNutrition=true&apiKey=' . env('SPOONACULAR_API_KEY'),
+                [
+                    'ingredientList' => $request->bahan,
+                    'servings' => 1,
+                ]
+            );
+
+            $nutrition = $response->json();
+
+            $kalori = 0;
+            $protein = 0;
+            $lemak = 0;
+            $karbohidrat = 0;
+
+            foreach ($nutrition as $ingredient) {
+
+                if (isset($ingredient['nutrition']['nutrients'])) {
+
+                    foreach ($ingredient['nutrition']['nutrients'] as $nutrient) {
+
+                        if ($nutrient['name'] == 'Calories') {
+                            $kalori += $nutrient['amount'];
+                        }
+
+                        if ($nutrient['name'] == 'Protein') {
+                            $protein += $nutrient['amount'];
+                        }
+
+                        if ($nutrient['name'] == 'Fat') {
+                            $lemak += $nutrient['amount'];
+                        }
+
+                        if ($nutrient['name'] == 'Carbohydrates') {
+                            $karbohidrat += $nutrient['amount'];
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($request->hasFile('gambar_makanan')) {
+
+            $gambar = $request->file('gambar_makanan');
+
+            $namaGambar = time() . '.' . $gambar->getClientOriginalExtension();
+
+            $gambar->storeAs('makanan', $namaGambar, 'public');
+
+            $makanan->gambar_makanan = 'makanan/' . $namaGambar;
+        }
+
+        if ($request->filled('kategori_id')) {
+            $makanan->kategori_id = $request->kategori_id;
+        }
+
+        if ($request->filled('nama_makanan')) {
+            $makanan->nama_makanan = $request->nama_makanan;
+        }
+
+        if ($request->filled('bahan')) {
+            $makanan->bahan = $request->bahan;
+        }
+
+        if ($request->filled('deskripsi')) {
+            $makanan->deskripsi = $request->deskripsi;
+        }
+
+        if ($request->filled('harga')) {
+            $makanan->harga = $request->harga;
+        }
+
+        $makanan->kalori = $kalori;
+        $makanan->protein = $protein;
+        $makanan->lemak = $lemak;
+        $makanan->karbohidrat = $karbohidrat;
+
+        $makanan->save();
+
+        return response()->json([
+            'message' => 'Makanan berhasil diupdate',
+            'data' => $makanan
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+        $seller = Seller::where('user_id', Auth::id())->first();
+
+        $makanan = Makanan::where('seller_id', $seller->id)->where('id', $id)->first();
+
+        if (!$makanan) {
+
+            return response()->json([
+                'message' => 'Makanan tidak ditemukan'
+            ], 404);
+
+        }
+
+        $makanan->delete();
+
+        return response()->json([
+            'message' => 'Makanan berhasil dihapus'
         ], 200);
     }
 }

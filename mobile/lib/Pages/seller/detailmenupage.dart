@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/allreviewpage.dart';
+import 'package:mobile/services/api_service.dart';
 
 class DetailMenuPage extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -44,8 +45,8 @@ class DetailMenuPage extends StatelessWidget {
             children: [
               Stack(
                 children: [
-                  Image.asset(
-                    item["image"],
+                  Image.network(
+                    "${ApiService.baseUrl}/storage/${item["gambar_makanan"]}",
                     height: 280,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -107,7 +108,7 @@ class DetailMenuPage extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      item["name"],
+                                      item["nama_makanan"],
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -115,7 +116,7 @@ class DetailMenuPage extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    item["price"],
+                                    "Rp ${item["harga"]}",
                                     style: const TextStyle(
                                       fontSize: 20,
                                       color: Colors.orange,
@@ -162,7 +163,7 @@ class DetailMenuPage extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      item["category"],
+                                      item["kategori"]["nama_kategori"],
                                       style: const TextStyle(
                                         color: Colors.orange,
                                         fontSize: 12,
@@ -181,8 +182,8 @@ class DetailMenuPage extends StatelessWidget {
 
                                   const SizedBox(width: 6),
 
-                                  const Text(
-                                    "Healthy Kitchen",
+                                  Text(
+                                    item["seller"]["nama_toko"],
                                     style: TextStyle(
                                       color: Colors.black87,
                                       fontSize: 13,
@@ -230,10 +231,10 @@ class DetailMenuPage extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  buildInfo(Icons.local_fire_department, "Kalori", "250 kcal", Colors.orange),
-                                  buildInfo(Icons.set_meal, "Protein", "20g", Colors.blue),
-                                  buildInfo(Icons.water_drop, "Lemak", "10g", Colors.red),
-                                  buildInfo(Icons.grain, "Karbo", "30g", Colors.green),
+                                  buildInfo(Icons.local_fire_department, "Kalori", "${item["kalori"]} kcal", Colors.orange),
+                                  buildInfo(Icons.set_meal, "Protein", "${item["protein"]} g", Colors.blue),
+                                  buildInfo(Icons.water_drop, "Lemak", "${item["lemak"]} g", Colors.red),
+                                  buildInfo(Icons.grain, "Karbo", "${item["karbohidrat"]} g", Colors.green),
                                 ],
                               ),
                             ],
@@ -273,8 +274,7 @@ class DetailMenuPage extends StatelessWidget {
                               const SizedBox(height: 10),
 
                               Text(
-                                item["description"] ??
-                                    "Makanan sehat dengan bahan berkualitas tinggi, cocok untuk diet dan menjaga tubuh tetap fit.",
+                                item["deskripsi"],
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   height: 1.5,

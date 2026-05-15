@@ -120,7 +120,7 @@ class AddMenuPageState extends State<AddMenuPage> {
 
       final data = jsonDecode(responseBody);
 
-      print(data);
+      debugPrint(data.toString());
 
       if (response.statusCode == 200) {
 
@@ -130,7 +130,7 @@ class AddMenuPageState extends State<AddMenuPage> {
 
         if (!mounted) return;
 
-        Navigator.pop(context);
+        Navigator.pop(context, true);
 
       } else {
 
@@ -142,7 +142,7 @@ class AddMenuPageState extends State<AddMenuPage> {
 
     } catch (e) {
 
-       print(e.toString());
+      debugPrint(e.toString());
 
       Fluttertoast.showToast(
         msg: "Terjadi kesalahan",

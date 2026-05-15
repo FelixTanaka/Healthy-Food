@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/seller/detailmenupage.dart';
 import 'package:mobile/Pages/seller/addmenupage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile/services/api_service.dart';
+import 'package:mobile/Pages/seller/editmenupage.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -10,17 +16,108 @@ class MenuPage extends StatefulWidget {
 }
 
 class MenuPageState extends State<MenuPage> {
-  List<Map<String, dynamic>> menuList = [
-    {
-      "name": "Nasi Goreng",
-      "price": "15.000",
-      "image": "assets/images/ayam.jpg",
-      "description": "Nasi goreng spesial dengan bumbu khas Indonesia",
-      "category": "Makanan",
-      "rating": 4.5,
-      "status": "Tersedia",
-    },
-  ];
+  List<Map<String, dynamic>> menuList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getMenu();
+  }
+
+  Future<void> getMenu() async {
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString("token");
+
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/api/makanan"),
+
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+         debugPrint(response.body);
+
+        final data = jsonDecode(response.body);
+
+        setState(() {
+
+          menuList = List<Map<String, dynamic>>.from(data["data"]);
+
+        });
+
+      } else {
+
+        debugPrint(response.body);
+
+      }
+
+    } catch (e) {
+
+      debugPrint(e.toString());
+
+    }
+  }
+
+  Future<void> deleteMenu(int id) async {
+
+    try {
+
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      String? token =
+          prefs.getString("token");
+
+      final response = await http.delete(
+
+        Uri.parse(
+          "${ApiService.baseUrl}/api/makanan/$id",
+        ),
+
+        headers: {
+
+          "Accept": "application/json",
+
+          "Authorization": "Bearer $token",
+
+        },
+      );
+
+      final data =
+          jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        Fluttertoast.showToast(
+
+          msg: data["message"],
+
+        );
+
+        getMenu();
+
+      } else {
+
+        Fluttertoast.showToast(
+
+          msg: "Gagal hapus menu",
+
+        );
+
+      }
+
+    } catch (e) {
+
+      debugPrint(e.toString());
+
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,13 +148,16 @@ class MenuPageState extends State<MenuPage> {
                 const SizedBox(width: 10),
 
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async{
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => AddMenuPage(),
                       ),
                     );
+                    if (result == true) {
+                      getMenu();
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.all(12),
@@ -102,12 +202,12 @@ class MenuPageState extends State<MenuPage> {
                             topLeft: Radius.circular(12),
                             bottomLeft: Radius.circular(12),
                           ),
-                          child: Image.asset(
-                            item["image"],
+                          child: Image.network(
+                            "${ApiService.baseUrl}/storage/${item["gambar_makanan"]}",
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
-                          ),
+                          )
                         ),
 
                         const SizedBox(width: 12),
@@ -117,7 +217,7 @@ class MenuPageState extends State<MenuPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item["name"],
+                                item["nama_makanan"],
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -127,7 +227,7 @@ class MenuPageState extends State<MenuPage> {
                               const SizedBox(height: 4),
 
                               Text(
-                                "Rp ${item["price"]}",
+                                "Rp ${item["harga"]}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -146,7 +246,7 @@ class MenuPageState extends State<MenuPage> {
                                   const SizedBox(width: 3),
 
                                   Text(
-                                    item["rating"].toString(),
+                                    "4.5",
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -156,7 +256,7 @@ class MenuPageState extends State<MenuPage> {
                                   const SizedBox(width: 10),
 
                                   Text(
-                                    item["status"] ?? "Tersedia",
+                                    item["status"],
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -171,15 +271,24 @@ class MenuPageState extends State<MenuPage> {
 
                         IconButton(
                           icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            
+                          onPressed: () async {
+                            final result =  await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditMenuPage(item: item),
+                              ),
+                            );
+
+                            if (result == true) {
+                              getMenu();
+                            }
                           },
                         ),
 
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                        
+                            deleteMenu(item["id"]);
                           },
                         ),
                       ],

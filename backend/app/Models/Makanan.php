@@ -17,6 +17,7 @@ class Makanan extends Model
         'gambar_makanan',
         'status',
         'deskripsi',
+        'bahan',
         'harga',
         'kalori',
         'protein',
