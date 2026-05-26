@@ -131,4 +131,35 @@ class UserController extends Controller
             'data' => $user
         ], 201);
     }
+
+    public function registerAdmin(Request $request)
+    {
+        $request->validate([
+            'username' => 'required',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'no_telp' => 'required',
+        ]);
+
+        $role = Role::where('nama_role', 'admin')->first();
+
+        if (!$role) {
+            return response()->json([
+                'message' => 'Role admin tidak ditemukan'
+            ], 500);
+        }
+
+        $user = User::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'no_telp' => $request->no_telp,
+            'password' => Hash::make($request->password),
+            'role_id' => $role->id
+        ]);
+
+        return response()->json([
+            'message' => 'Akun admin berhasil dibuat',
+            'data' => $user
+        ], 201);
+    }
 }
