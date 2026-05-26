@@ -1,7 +1,155 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:mobile/Pages/pembayaranberhasil.dart';
+import 'package:mobile/Pages/pembayarangagal.dart';
 
-class ConfirmTransaksiPage extends StatelessWidget {
-  const ConfirmTransaksiPage({super.key});
+class ConfirmTransaksiPage extends StatefulWidget {
+  final Map<String, dynamic> selectedAddress;
+  final List<Map<String, dynamic>> keranjang;
+  final Map<String, dynamic> user;
+  final int subtotal;
+  final int biayaAdmin;
+
+  const ConfirmTransaksiPage({
+    super.key,
+    required this.selectedAddress,
+    required this.keranjang,
+    required this.subtotal,
+    required this.biayaAdmin,
+    required this.user,
+  });
+
+  @override
+  State<ConfirmTransaksiPage> createState() => ConfirmTransaksiPageState();
+}
+
+class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
+  bool isLoading = false;
+
+  Future<void> createInvoice() async {
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
+    try {
+
+      SharedPreferences prefs =
+          await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse(
+          '${ApiService.baseUrl}/api/create-invoice',
+        ),
+
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+
+        body: jsonEncode({
+          'alamat_pengiriman': widget.selectedAddress['alamat'],
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        final invoiceUrl = data['invoice_url'];
+        final orderId = data['order_id'];
+
+        await launchUrl(
+          Uri.parse(invoiceUrl),
+          mode: LaunchMode.externalApplication,
+          
+        );
+      
+        for (int i = 0; i < 20; i++) {
+
+          await Future.delayed(
+            const Duration(seconds: 3),
+          );
+
+          final status =
+              await cekStatusPembayaran(orderId);
+
+          if (status == 'dibayar') {
+
+            if (!mounted) return;
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const PembayaranBerhasilPage(),
+              ),
+            );
+
+            break;
+          }else if (status == 'gagal') {
+
+            if (!mounted) return;
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const PembayaranGagalPage(),
+              ),
+            );
+
+            break;
+          }
+        }
+      } else {
+
+        debugPrint(data.toString());
+      }
+
+    } catch (e) {
+
+      debugPrint(e.toString());
+    }finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<String> cekStatusPembayaran(
+    int orderId,
+  ) async {
+
+    SharedPreferences prefs =
+        await SharedPreferences.getInstance();
+
+    String? token = prefs.getString('token');
+
+    final response = await http.get(
+      Uri.parse(
+        '${ApiService.baseUrl}/api/cek-order/$orderId',
+      ),
+
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    return data['status_transaksi'];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +169,7 @@ class ConfirmTransaksiPage extends StatelessWidget {
             buildSection(
               icon: Icons.person,
               title: "Penerima",
-              content: "Felix • 08123456789",
+              content: "${widget.user['username']} - ${widget.user['no_telp']}",
             ),
 
             const SizedBox(height: 12),
@@ -29,7 +177,7 @@ class ConfirmTransaksiPage extends StatelessWidget {
             buildSection(
               icon: Icons.location_on,
               title: "Alamat Pengiriman",
-              content: "Jl. Contoh No. 123, Yogyakarta",
+              content: widget.selectedAddress['alamat'],
             ),
 
           const SizedBox(height: 16),
@@ -40,61 +188,66 @@ class ConfirmTransaksiPage extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    "assets/images/ayam.jpg",
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
+                ...widget.keranjang.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      children: [
 
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Nasi Ayam Bakar",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4),
-                      Text("1 x Rp 20.000"),
-                    ],
-                  ),
-                ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            "${ApiService.baseUrl}/storage/${item['makanan']['gambar_makanan']}",
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
 
-                const Text(
-                  "Rp 20.000",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
+                        const SizedBox(width: 12),
 
-          const SizedBox(height: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item['makanan']['seller']['nama_toko'],
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blueGrey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
 
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Image.asset(
-                  "assets/images/dana.png",
-                  width: 40,
-                  height: 40,
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  "DANA",
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
+                              Text(
+                                item['makanan']['nama_makanan'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(height: 4),
+
+                              Text(
+                                "${item['jumlah']} x Rp ${item['makanan']['harga']}",
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Text(
+                          "Rp ${item['jumlah'] * item['makanan']['harga']}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
               ],
             ),
           ),
@@ -108,20 +261,20 @@ class ConfirmTransaksiPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
-              children: const [
+              children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Subtotal"),
-                    Text("Rp 20.000"),
+                    Text("Rp ${widget.subtotal}"),
                   ],
                 ),
                 SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Ongkir"),
-                    Text("Rp 5.000"),
+                    Text("Biaya Admin"),
+                    Text("Rp ${widget.biayaAdmin}"),
                   ],
                 ),
                 Divider(height: 20),
@@ -133,7 +286,7 @@ class ConfirmTransaksiPage extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      "Rp 25.000",
+                      "Rp ${widget.subtotal + widget.biayaAdmin}",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.orange,
@@ -185,9 +338,12 @@ class ConfirmTransaksiPage extends StatelessWidget {
           ],
         ),
         child: ElevatedButton(
-          onPressed: () {
-            // nanti kita sambung ke Xendit
-          },
+          onPressed: isLoading
+              ? null
+              : () {
+                  createInvoice();
+                },
+
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,
             minimumSize: const Size.fromHeight(55),
@@ -196,14 +352,19 @@ class ConfirmTransaksiPage extends StatelessWidget {
             ),
             elevation: 3,
           ),
-          child: const Text(
-            "Bayar Sekarang",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
+
+          child: isLoading
+              ? const CircularProgressIndicator(
+                  color: Colors.white,
+                )
+              : const Text(
+                  "Bayar Sekarang",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
         ),
       ),
     );

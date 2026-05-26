@@ -29,14 +29,19 @@ class HomeContentState extends State<HomeContent> {
   double karboDikonsumsi = 0;
   double lemakDikonsumsi = 0;
 
-  double proteinPercent = 0.2;
-  double karboPercent = 0.2;
-  double lemakPercent = 0.2;
+  double proteinPercent = 0;
+  double karboPercent = 0;
+  double lemakPercent = 0;
 
   @override
   void initState() {
     super.initState();
-    getHealthProfile();
+    loadData();
+  }
+
+  Future<void> loadData() async {
+    await getHealthProfile();
+    await getNutrisiHarian();
   }
 
   Future<void> getHealthProfile() async {
@@ -75,6 +80,73 @@ class HomeContentState extends State<HomeContent> {
       }
 
     } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> getNutrisiHarian() async {
+
+    try {
+
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      String? token =
+          prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse(
+          '${ApiService.baseUrl}/api/nutrisi-harian',
+        ),
+
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        final data =
+            jsonDecode(response.body);
+
+        setState(() {
+
+          kaloriDikonsumsi =
+              data['kalori'];
+
+          proteinDikonsumsi =
+              data['protein'].toDouble();
+
+          karboDikonsumsi =
+              data['karbo'].toDouble();
+
+          lemakDikonsumsi =
+              data['lemak'].toDouble();
+
+         sisaKalori =
+            (kalori - kaloriDikonsumsi)
+                .clamp(0, kalori);
+
+          proteinPercent = protein > 0
+              ? (proteinDikonsumsi / protein)
+                  .clamp(0.0, 1.0)
+              : 0;
+
+          karboPercent = karbo > 0
+              ? (karboDikonsumsi / karbo)
+                  .clamp(0.0, 1.0)
+              : 0;
+
+          lemakPercent = lemak > 0
+              ? (lemakDikonsumsi / lemak)
+                  .clamp(0.0, 1.0)
+              : 0;
+        });
+      }
+
+    } catch (e) {
+
       debugPrint(e.toString());
     }
   }
@@ -118,7 +190,7 @@ class HomeContentState extends State<HomeContent> {
                     CircularPercentIndicator(
                       radius: 80.0,
                       lineWidth: 10.0,
-                      percent: 0.4, 
+                      percent: kalori > 0 ? (kaloriDikonsumsi / kalori).clamp(0.0, 1.0) : 0, 
                       center: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
