@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\OrderItem;
 
 class PembeliController extends Controller
 {
@@ -49,6 +50,63 @@ class PembeliController extends Controller
         return response()->json([
             'message' => 'Profile berhasil diupdate',
             'data' => $user
+        ]);
+    }
+
+    public function nutrisiHarian()
+    {
+        $userId = auth()->id();
+
+        $items = OrderItem::with(
+            'makanan',
+            'order'
+        )
+        ->whereHas('order', function ($query) use ($userId) {
+
+            $query->where(
+                'user_id',
+                $userId
+            )
+            ->where(
+                'status_transaksi',
+                'dibayar'
+            )
+            ->whereDate(
+                'tanggal_transaksi',
+                today()
+            );
+        })
+        ->get();
+
+        $kalori = 0;
+        $protein = 0;
+        $karbo = 0;
+        $lemak = 0;
+
+        foreach ($items as $item) {
+
+            $kalori +=
+                $item->makanan->kalori
+                * $item->jumlah;
+
+            $protein +=
+                $item->makanan->protein
+                * $item->jumlah;
+
+            $karbo +=
+                $item->makanan->karbohidrat
+                * $item->jumlah;
+
+            $lemak +=
+                $item->makanan->lemak
+                * $item->jumlah;
+        }
+
+        return response()->json([
+            'kalori' => round($kalori, 2),
+            'protein' => round($protein, 2),
+            'karbo' => round($karbo, 2),
+            'lemak' => round($lemak, 2),
         ]);
     }
 }

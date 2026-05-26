@@ -251,4 +251,82 @@ class MakananController extends Controller
             'message' => 'Makanan berhasil dihapus'
         ], 200);
     }
+
+    public function semuaMakanan()
+    {
+        $makanan = Makanan::with(['kategori', 'seller'])
+            ->get();
+
+        return response()->json([
+            'message' => 'Semua makanan berhasil diambil',
+            'data' => $makanan
+        ]);
+    }
+
+    public function approve($id)
+    {
+        $makanan = Makanan::find($id);
+
+        if (!$makanan) {
+            return response()->json([
+                'message' => 'Makanan tidak ditemukan'
+            ], 404);
+        }
+
+        $makanan->status = 'dikonfirmasi';
+
+        $makanan->save();
+
+        return response()->json([
+            'message' => 'Makanan berhasil dikonfirmasi'
+        ]);
+    }
+
+    public function reject($id)
+    {
+        $makanan = Makanan::find($id);
+
+        if (!$makanan) {
+            return response()->json([
+                'message' => 'Makanan tidak ditemukan'
+            ], 404);
+        }
+
+        $makanan->status = 'ditolak';
+
+        $makanan->save();
+
+        return response()->json([
+            'message' => 'Makanan berhasil ditolak'
+        ]);
+    }
+
+    public function deleteMakananAdmin($id)
+    {
+        $makanan = Makanan::find($id);
+
+        if (!$makanan) {
+            return response()->json([
+                'message' => 'Makanan tidak ditemukan'
+            ], 404);
+        }
+
+        $makanan->delete();
+
+        return response()->json([
+            'message' => 'Makanan berhasil dihapus'
+        ], 200);
+    }
+
+    public function makananPembeli()
+    {
+        $makanan = Makanan::with(['kategori', 'seller'])
+            ->where('status', 'dikonfirmasi')
+            ->get();
+
+        return response()->json([
+            'message' => 'Semua makanan berhasil diambil',
+            'data' => $makanan
+        ]);
+    }
 }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/confirmtransaksipage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile/services/api_service.dart';
 
 class TransaksiPage extends StatefulWidget {
   const TransaksiPage({super.key});
@@ -9,28 +13,94 @@ class TransaksiPage extends StatefulWidget {
 }
 
 class _TransaksiPageState extends State<TransaksiPage> {
-  String selectedAddress = "Jl. Contoh No. 123, Yogyakarta";
+  List<Map<String, dynamic>> addresses = [];
+  Map<String, dynamic>? selectedAddress;
+  List<Map<String, dynamic>> keranjang = [];
+  Map<String, dynamic>? user;
+  int biayaAdmin = 0;
+  int subtotal = 0;
 
-  String paymentMethod = "DANA";
+  @override
+  void initState() {
+    super.initState();
+    getAlamat();
+    getKeranjang();
+  }
 
-  final List<String> addresses = [
-    "Jl. Contoh No. 123, Yogyakarta",
-    "Jl. Kantor No. 45, Sleman",
-    "Jl. Malioboro No. 10, Yogyakarta",
-  ];
+  Future<void> getAlamat() async {
+    try {
+      SharedPreferences prefs =
+          await SharedPreferences.getInstance();
 
-  final List<Map<String, String>> eWallets = [
-    {"name": "DANA", "image": "assets/images/dana.png"},
-    {"name": "OVO", "image": "assets/images/ovo.png"},
-    {"name": "GoPay", "image": "assets/images/gopay.png"},
-    {"name": "ShopeePay", "image": "assets/images/shopeepay.png"},
-  ];
+      String? token = prefs.getString('token');
 
-  final List<Map<String, String>> virtualAccounts = [
-    {"name": "BCA VA", "image": "assets/images/bca.png"},
-    {"name": "BNI VA", "image": "assets/images/bni.png"},
-    {"name": "Mandiri VA", "image": "assets/images/mandiri.png"},
-  ];
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/api/alamat'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        setState(() {
+          addresses =  List<Map<String, dynamic>>.from(data['data']);
+
+          if (addresses.isNotEmpty) {
+            selectedAddress = addresses[0];
+          }
+        });
+      } else {
+        debugPrint(data.toString());
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> getKeranjang() async {
+    try {
+      SharedPreferences prefs =
+          await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/api/keranjang'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        final items =
+            List<Map<String, dynamic>>.from(
+                data['data']);
+
+        int total = data['total_harga'];
+
+        int admin = (total * 0.10).toInt();
+
+        setState(() {
+          keranjang = items;
+          subtotal = total;
+          biayaAdmin = admin;
+          user = data['user'];
+        });
+
+      } else {
+        debugPrint(data.toString());
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +143,9 @@ class _TransaksiPageState extends State<TransaksiPage> {
                         const SizedBox(height: 12),
 
                         ...addresses.map((addr) {
-                          final isSelected = addr == selectedAddress;
+                          final isSelected =
+                            selectedAddress != null &&
+                            addr['id'] == selectedAddress!['id'];
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
@@ -89,7 +161,7 @@ class _TransaksiPageState extends State<TransaksiPage> {
                               ),
                             ),
                             child: ListTile(
-                              title: Text(addr),
+                              title: Text(addr['alamat']),
                               trailing: isSelected
                                   ? const Icon(Icons.check, color: Colors.orange)
                                   : null,
@@ -130,7 +202,7 @@ class _TransaksiPageState extends State<TransaksiPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          selectedAddress,
+                          selectedAddress?['alamat'] ?? '',
                           style: const TextStyle(color: Colors.black87),
                         ),
                       ],
@@ -151,124 +223,106 @@ class _TransaksiPageState extends State<TransaksiPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
-              children: [
-                Image.asset(
-                  "assets/images/ayam.jpg",
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                ),
-                const SizedBox(width: 12),
-
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Nasi Ayam Bakar",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4),
-                      Text("1 x Rp 20.000"),
-                    ],
-                  ),
-                ),
-
-                const Text(
-                  "Rp 20.000",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Metode Pembayaran",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
 
-                const Text(
-                  "E-Wallet",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 10),
+                ...keranjang.map((item) {
 
-                ...eWallets.map((item) {
-                  return buildPaymentItemWithIcon(
-                    item["name"]!,
-                    item["name"]!,
-                    item["image"]!,
-                  );
-                }),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      children: [
 
-                const SizedBox(height: 16),
+                        Image.network(
+                          "${ApiService.baseUrl}/storage/${item["makanan"]["gambar_makanan"]}",
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
 
-                const Text(
-                  "Virtual Account",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 10),
+                        const SizedBox(width: 12),
 
-                ...virtualAccounts.map((item) {
-                  return buildPaymentItemWithIcon(
-                    item["name"]!,
-                    item["name"]!,
-                    item["image"]!,
-                  );
-                }),
-              ],
-            ),
-          ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
 
-          const SizedBox(height: 16),
+                              Text(
+                                item['makanan']['seller']['nama_toko'],
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blueGrey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
 
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: const [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Subtotal"),
-                    Text("Rp 20.000"),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Ongkir"),
-                    Text("Rp 5.000"),
-                  ],
-                ),
-                Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Total",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                              Text(
+                                item['makanan']['nama_makanan'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(height: 4),
+
+                              Text(
+                                '${item['jumlah']} x Rp ${item['makanan']['harga']}',
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Text(
+                          'Rp ${item['jumlah'] * item['makanan']['harga']}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      "Rp 25.000",
+                  );
+                }),
+
+                const Divider(),
+
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Subtotal"),
+                    Text("Rp $subtotal"),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Biaya Admin"),
+                    Text("Rp $biayaAdmin"),
+                  ],
+                ),
+
+                const Divider(height: 20),
+
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                  children: [
+
+                    const Text(
+                      "Total",
                       style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    Text(
+                      'Rp ${subtotal + biayaAdmin}',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.orange,
                       ),
@@ -298,7 +352,13 @@ class _TransaksiPageState extends State<TransaksiPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ConfirmTransaksiPage(),
+                builder: (context) => ConfirmTransaksiPage(
+                  selectedAddress: selectedAddress!,
+                  keranjang: keranjang,
+                  subtotal: subtotal,
+                  biayaAdmin: biayaAdmin,
+                  user: user!,
+                ),
               ),
             );
           },
@@ -313,56 +373,6 @@ class _TransaksiPageState extends State<TransaksiPage> {
             "Lanjut ke Pembayaran",
             style: TextStyle(color: Colors.white),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget buildPaymentItemWithIcon(
-    String value,
-    String label,
-    String imagePath,
-  ) {
-    final isSelected = paymentMethod == value;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          paymentMethod = value;
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.orange.withValues(alpha: 0.1)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? Colors.orange
-                : Colors.grey.shade200,
-          ),
-        ),
-        child: Row(
-          children: [
-            Image.asset(
-              imagePath,
-              width: 40,
-              height: 40,
-            ),
-            const SizedBox(width: 12),
-
-            Expanded(child: Text(label)),
-
-            Icon(
-              isSelected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_off,
-              color: isSelected ? Colors.orange : Colors.grey,
-            ),
-          ],
         ),
       ),
     );

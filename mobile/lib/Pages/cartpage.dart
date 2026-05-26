@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/transaksipage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile/services/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -9,7 +14,125 @@ class CartPage extends StatefulWidget {
 }
 
 class CartPageState extends State<CartPage> {
-  int quantity = 1; 
+  List<dynamic> keranjang = [];
+
+  int totalHarga = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    getKeranjang();
+  }
+
+  Future<void> getKeranjang() async {
+
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/api/keranjang"),
+
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        setState(() {
+
+          keranjang = data["data"];
+
+          totalHarga = data["total_harga"];
+        });
+      }
+
+    } catch (e) {
+
+      debugPrint(e.toString());
+
+    }
+  }
+
+  Future<void> tambahJumlah(int id) async {
+
+    final prefs = await SharedPreferences.getInstance();
+
+    String? token = prefs.getString('token');
+
+    await http.post(
+      Uri.parse("${ApiService.baseUrl}/api/keranjang/tambah-jumlah/$id"),
+
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    getKeranjang();
+  }
+
+  Future<void> kurangJumlah(int id) async {
+
+    final prefs = await SharedPreferences.getInstance();
+
+    String? token = prefs.getString('token');
+
+    await http.post(
+      Uri.parse("${ApiService.baseUrl}/api/keranjang/kurang-jumlah/$id"),
+
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    getKeranjang();
+  }
+
+  Future<void> hapusKeranjang() async {
+
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.delete(
+        Uri.parse("${ApiService.baseUrl}/api/keranjang/hapus"),
+
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        Fluttertoast.showToast(
+          msg: data["message"],
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+
+        getKeranjang();
+      }
+
+    } catch (e) {
+
+      debugPrint(e.toString());
+
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,51 +147,72 @@ class CartPageState extends State<CartPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: () {},
+            onPressed: () {
+              hapusKeranjang();
+            },
           ),
         ],
       ),
-
-      body: ListView(
+      body: keranjang.isEmpty
+      ? const Center(
+          child: Text("Keranjang kosong"),
+        )
+      : ListView.builder(
         padding: const EdgeInsets.all(16),
-        children: [
-          Container(
+        itemCount: keranjang.length,
+        itemBuilder: (context, index) {
+
+          final item = keranjang[index];
+
+          return Container(
             padding: EdgeInsets.zero,
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
+
             child: Row(
               children: [
+
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     bottomLeft: Radius.circular(12),
                   ),
-                  child: Image.asset(
-                    "assets/images/ayam.jpg",
+
+                  child: Image.network(
+                    "${ApiService.baseUrl}/storage/${item["makanan"]["gambar_makanan"]}",
                     width: 70,
                     height: 80,
                     fit: BoxFit.cover,
                   ),
                 ),
 
-
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
+
                     child: Row(
                       children: [
+
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
+
                               Text(
-                                "Nasi Ayam Bakar",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                item["makanan"]["nama_makanan"],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              Text("Rp 20.000"),
+
+                              const SizedBox(height: 4),
+
+                              Text(
+                                "Rp ${item["makanan"]["harga"]}",
+                              ),
                             ],
                           ),
                         ),
@@ -81,14 +225,24 @@ class CartPageState extends State<CartPage> {
                                 color: Colors.grey[200],
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Icon(Icons.remove, size: 16),
+                              child: InkWell(
+                                onTap: () {
+                                  kurangJumlah(item["id"]);
+                                },
+                                child: const Icon(
+                                  Icons.remove,
+                                  size: 16,
+                                ),
+                              ),
                             ),
 
                             const SizedBox(width: 8),
 
-                            const Text(
-                              "1",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            Text(
+                              "${item["jumlah"]}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
 
                             const SizedBox(width: 8),
@@ -99,10 +253,15 @@ class CartPageState extends State<CartPage> {
                                 color: Colors.orange.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Icon(
-                                Icons.add,
-                                size: 16,
-                                color: Colors.orange,
+                              child: InkWell(
+                                onTap: () {
+                                  tambahJumlah(item["id"]);
+                                },
+                                child: const Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: Colors.orange,
+                                ),
                               ),
                             ),
                           ],
@@ -113,9 +272,9 @@ class CartPageState extends State<CartPage> {
                 ),
               ],
             ),
-          ),
-        ],
-      ), 
+          );
+        },
+      ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -134,11 +293,11 @@ class CartPageState extends State<CartPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text("Total", style: TextStyle(color: Colors.grey)),
                   SizedBox(height: 4),
                   Text(
-                    "Rp 20.000",
+                    "Rp $totalHarga",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -148,7 +307,7 @@ class CartPageState extends State<CartPage> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: keranjang.isEmpty ? null : () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(

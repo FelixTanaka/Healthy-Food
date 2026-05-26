@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/allreviewpage.dart';
+import 'package:mobile/services/api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class DetailMenuPage extends StatelessWidget {
   final Map<String, dynamic> food;
@@ -34,6 +39,60 @@ class DetailMenuPage extends StatelessWidget {
     },
   ];
 
+  Future<void> tambahKeranjang() async {
+
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/api/keranjang/tambah"),
+
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+
+         body: jsonEncode({
+
+          "makanan_id": food["id"],
+          "jumlah": 1,
+
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        Fluttertoast.showToast(
+          msg: data["message"],
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+
+      } else {
+
+        Fluttertoast.showToast(
+          msg: "Gagal tambah keranjang",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+      }
+
+    } catch (e) {
+
+      Fluttertoast.showToast(
+        msg: e.toString(),
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,8 +103,8 @@ class DetailMenuPage extends StatelessWidget {
             children: [
               Stack(
                 children: [
-                  Image.asset(
-                    food["image"],
+                  Image.network(
+                    "${ApiService.baseUrl}/storage/${food["gambar_makanan"]}",
                     height: 280,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -107,7 +166,7 @@ class DetailMenuPage extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      food["name"],
+                                      food["nama_makanan"],
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -115,7 +174,7 @@ class DetailMenuPage extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    food["price"],
+                                     "Rp ${food["harga"]}",
                                     style: const TextStyle(
                                       fontSize: 20,
                                       color: Colors.orange,
@@ -131,7 +190,7 @@ class DetailMenuPage extends StatelessWidget {
                                 children: [
                                   ...List.generate(5, (index) {
                                     return Icon(
-                                      index < (food["rating"] ?? 4)
+                                      index < (4)
                                           ? Icons.star
                                           : Icons.star_border,
                                       color: Colors.amber,
@@ -140,12 +199,12 @@ class DetailMenuPage extends StatelessWidget {
                                   }),
                                   const SizedBox(width: 6),
                                   Text(
-                                    "${food["rating"] ?? 4.0}",
+                                    "${4.0}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    "(${food["reviews"] ?? 120})",
+                                    "(${120})",
                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                   ),
                                 ],
@@ -155,38 +214,56 @@ class DetailMenuPage extends StatelessWidget {
 
                               Row(
                                 children: [
+
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
                                     ),
+
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.1,
+                                      ),
+
+                                      borderRadius:
+                                          BorderRadius.circular(8),
+                                    ),
+
                                     child: Text(
-                                      food["category"],
+                                      food["kategori"]["nama_kategori"],
+
                                       style: const TextStyle(
                                         color: Colors.orange,
                                         fontSize: 12,
-                                        fontWeight: FontWeight.w600, 
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
 
                                   const SizedBox(width: 10),
 
-                                  const Icon(
-                                    Icons.storefront,
-                                    size: 14,
-                                    color: Colors.grey,
+                                  CircleAvatar(
+                                    radius: 12,
+
+                                    backgroundImage: NetworkImage(
+                                      "${ApiService.baseUrl}/storage/${food["seller"]["foto_toko"]}",
+                                    ),
                                   ),
 
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 8),
 
-                                  const Text(
-                                    "Healthy Kitchen",
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Text(
+                                      food["seller"]["nama_toko"],
+
+                                      overflow: TextOverflow.ellipsis,
+
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -230,10 +307,10 @@ class DetailMenuPage extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  buildInfo(Icons.local_fire_department, "Kalori", "250 kcal", Colors.orange),
-                                  buildInfo(Icons.set_meal, "Protein", "20g", Colors.blue),
-                                  buildInfo(Icons.water_drop, "Lemak", "10g", Colors.red),
-                                  buildInfo(Icons.grain, "Karbo", "30g", Colors.green),
+                                  buildInfo(Icons.local_fire_department, "Kalori", "${food["kalori"]} kcal", Colors.orange),
+                                  buildInfo(Icons.set_meal, "Protein", "${food["protein"]} g", Colors.blue),
+                                  buildInfo(Icons.water_drop, "Lemak", "${food["lemak"]} g", Colors.red),
+                                  buildInfo(Icons.grain, "Karbo", "${food["karbohidrat"]} g", Colors.green),
                                 ],
                               ),
                             ],
@@ -273,8 +350,7 @@ class DetailMenuPage extends StatelessWidget {
                               const SizedBox(height: 10),
 
                               Text(
-                                food["description"] ??
-                                    "Makanan sehat dengan bahan berkualitas tinggi, cocok untuk diet dan menjaga tubuh tetap fit.",
+                                food["deskripsi"],
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   height: 1.5,
@@ -420,7 +496,9 @@ class DetailMenuPage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              tambahKeranjang();
+                            },
                             child: const Text(
                               "Tambah ke Keranjang",
                               style: TextStyle(fontSize: 16, color: Colors.white),
