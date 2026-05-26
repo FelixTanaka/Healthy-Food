@@ -1,8 +1,135 @@
 import Sidebar from "../components/Sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 export default function Makanan() {
     const [showModal, setShowModal] = useState(false);
+    const [makanan, setMakanan] = useState([]);
+    const [selectedMakanan, setSelectedMakanan] = useState(null);
+    const [search, setSearch] = useState("");
+
+    const fetchData = async () => {
+        try {
+
+            const response = await axios.get(
+                "http://127.0.0.1:8000/api/semua-makanan",
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            setMakanan(response.data.data);
+
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const approveMakanan = async (id) => {
+        try {
+
+            await axios.put(
+                `http://127.0.0.1:8000/api/makanan/${id}/approve`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            fetchData();
+
+            toast.success("Makanan berhasil dikonfirmasi");
+
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const rejectMakanan = async (id) => {
+        try {
+
+            await axios.put(
+                `http://127.0.0.1:8000/api/makanan/${id}/reject`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            fetchData();
+
+            toast.error("Makanan berhasil ditolak");
+
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const deleteMakanan = async (id) => {
+        try {
+
+            await axios.delete(
+                `http://127.0.0.1:8000/api/admin/makanan/${id}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            fetchData();
+
+            toast.success("Makanan berhasil dihapus");
+
+        } catch (error) {
+            console.log(error);
+
+            toast.error("Gagal menghapus makanan");
+        }
+    };
+
+    const filteredMakanan = makanan.filter((item) =>
+        item.nama_makanan.toLowerCase().includes(search.toLowerCase()) ||
+
+        item.status.toLowerCase().includes(search.toLowerCase()) ||
+
+        item.kategori.nama_kategori.toLowerCase().includes(search.toLowerCase()) ||
+
+        item.seller.nama_toko.toLowerCase().includes(search.toLowerCase()) ||
+
+        item.harga.toString().includes(search) ||
+
+        item.kalori.toString().includes(search) ||
+
+        item.protein.toString().includes(search) ||
+
+        item.karbohidrat.toString().includes(search) ||
+
+        item.lemak.toString().includes(search)
+    );
+
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const itemsPerPage = 8;
+
+    const lastIndex = currentPage * itemsPerPage;
+
+    const firstIndex = lastIndex - itemsPerPage;
+
+    const currentItems = filteredMakanan.slice(firstIndex, lastIndex);
+
+    const totalPages = Math.ceil(filteredMakanan.length / itemsPerPage);
 
     return (
         <div className="flex bg-gray-100 min-h-screen">
@@ -20,6 +147,8 @@ export default function Makanan() {
                         type="text"
                         placeholder="Cari Makanan..."
                         className="w-full md:w-1/3 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-200"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
 
@@ -43,53 +172,133 @@ export default function Makanan() {
 
                         <tbody className="text-gray-700">
 
-                            <tr className="border-t hover:bg-gray-50 transition">
-                                <td className="p-3 text-center">1</td>
-                                <td className="p-3 font-medium">Nasi Ayam</td>
-                                <td className="p-3 font-medium">Diet</td>
-                                <td className="p-3">Rp 25.000</td>
-                                <td className="p-3">Warung Budi</td>
-                                <td className="p-3 text-center">20g</td>
-                                <td className="p-3 text-center">40g</td>
-                                <td className="p-3 text-center">10g</td>
-                                <td className="p-3 text-center">350 kcal</td>
-                                <td className="p-3 text-center">Approved</td>
-                                <td className="p-3">
-                                <div className="flex justify-center gap-2">
-                                    <button className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded" onClick={() => setShowModal(true)}>
-                                        Detail
-                                    </button>
-                                    <button className="px-3 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded">
-                                        Hapus
-                                    </button>
-                                </div>
-                                </td>
-                            </tr>
+                            {currentItems.map((item, index) => (
+                                <tr
+                                    key={item.id}
+                                    className="border-t hover:bg-gray-50 transition"
+                                >
+                                    <td className="p-3 text-center">
+                                        {firstIndex + index + 1}
+                                    </td>
 
-                            <tr className="border-t hover:bg-gray-50 transition">
-                                <td className="p-3 text-center">2</td>
-                                <td className="p-3 font-medium">Salad Buah</td>
-                                <td className="p-3 font-medium">Diet</td>
-                                <td className="p-3">Rp 18.000</td>
-                                <td className="p-3">Toko Siti</td>
-                                <td className="p-3 text-center">5g</td>
-                                <td className="p-3 text-center">30g</td>
-                                <td className="p-3 text-center">2g</td>
-                                <td className="p-3 text-center">150 kcal</td>
-                                <td className="p-3 text-center">Approved</td>
-                                <td className="p-3">
-                                <div className="flex justify-center gap-2">
-                                    <button className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded" onClick={() => setShowModal(true)}>
-                                        Detail
-                                    </button>
-                                    <button className="px-3 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded">
-                                        Hapus
-                                    </button>
-                                </div>
-                                </td>
-                            </tr>
+                                    <td className="p-3 font-medium">
+                                        {item.nama_makanan}
+                                    </td>
+
+                                    <td className="p-3">
+                                        {item.kategori.nama_kategori}
+                                    </td>
+
+                                    <td className="p-3">
+                                        Rp {item.harga}
+                                    </td>
+
+                                    <td className="p-3">
+                                        {item.seller.nama_toko}
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                        {item.protein}g
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                        {item.karbohidrat}g
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                        {item.lemak}g
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                        {item.kalori} kcal
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                item.status === "dikonfirmasi"
+                                                    ? "bg-green-100 text-green-600"
+                                                    : item.status === "pending"
+                                                    ? "bg-orange-100 text-orange-600"
+                                                    : "bg-red-100 text-red-600"
+                                            }`}
+                                        >
+                                            {item.status}
+                                        </span>
+                                    </td>
+
+                                    <td className="p-3">
+                                        <div className="flex justify-center gap-2">
+
+                                            {item.status === "pending" ? (
+                                                <>
+                                                    <button className="w-8 h-8 rounded-full bg-green-500 text-white" onClick={() => approveMakanan(item.id)}>
+                                                        ✓
+                                                    </button>
+
+                                                    <button className="w-8 h-8 rounded-full bg-red-500 text-white" onClick={() => rejectMakanan(item.id)}>
+                                                        ✕
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        className="px-3 py-1 text-xs bg-blue-500 text-white rounded"
+                                                        onClick={() => {
+                                                            setShowModal(true);
+                                                            setSelectedMakanan(item);
+                                                        }}
+                                                    >
+                                                        Detail
+                                                    </button>
+
+                                                    <button
+                                                        className="px-3 py-1 text-xs bg-red-500 text-white rounded" onClick={()=> deleteMakanan(item.id)}
+                                                    >
+                                                        Hapus
+                                                    </button>
+                                                </>
+                                            )}
+
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
+                    <div className="flex justify-center items-center gap-2 mt-4 pb-4">
+
+                        <button
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 rounded bg-gray-200 text-black disabled:opacity-50"
+                        >
+                            Prev
+                        </button>
+
+                        {[...Array(totalPages)].map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentPage(index + 1)}
+                                className={`px-3 py-1 rounded ${
+                                    currentPage === index + 1
+                                        ? "bg-orange-500 text-white"
+                                        : "bg-gray-200 text-black"
+                                }`}
+                            >
+                                {index + 1}
+                            </button>
+                        ))}
+
+                        <button
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 rounded bg-gray-200 text-black disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+
+                    </div>
                 </div>
             </div>
 
@@ -111,14 +320,14 @@ export default function Makanan() {
                         <div className="flex gap-6">
                             <div className="w-1/3">
                                 <img
-                                    src="https://images.unsplash.com/photo-1604908176997-431c8d4b7f34"
+                                    src={`http://127.0.0.1:8000/storage/${selectedMakanan.gambar_makanan}`}
                                     alt="makanan"
                                     className="w-full h-48 object-cover rounded-xl shadow"
                                 />
 
                                 <div className="mt-3">
                                     <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-600 font-medium">
-                                        Approved
+                                        {selectedMakanan.status}
                                     </span>
                                 </div>
                             </div>
@@ -127,49 +336,49 @@ export default function Makanan() {
                                 <div className="space-y-3 text-sm text-gray-700">
                                     <div>
                                         <p className="text-gray-400">Nama</p>
-                                        <p className="font-semibold text-lg">Nasi Ayam</p>
+                                        <p className="font-semibold text-lg">{selectedMakanan.nama_makanan}</p>
 
                                         <p className="text-sm text-gray-400 mt-1">Toko</p>
-                                        <p className="text-sm font-medium text-gray-700">Warung Budi</p>
+                                        <p className="text-sm font-medium text-gray-700">{selectedMakanan.seller.nama_toko}</p>
                                     </div>
 
                                     <div>
                                         <p className="text-gray-400">Kategori</p>
-                                        <p>Diet</p>
+                                        <p>{selectedMakanan.kategori.nama_kategori}</p>
                                     </div>
 
                                     <div>
                                         <p className="text-gray-400">Harga</p>
-                                        <p className="text-orange-500 font-medium">Rp 25.000</p>
+                                        <p className="text-orange-500 font-medium">Rp {selectedMakanan.harga}</p>
                                     </div>
 
                                     <div className="grid grid-cols-4 gap-3 mt-2">
 
                                         <div className="bg-gray-100 rounded-lg p-3 text-center">
                                             <p className="text-xs text-gray-400">Kalori</p>
-                                            <p className="font-semibold">350 kcal</p>
+                                            <p className="font-semibold">{selectedMakanan.kalori}</p>
                                         </div>
 
                                         <div className="bg-gray-100 rounded-lg p-3 text-center">
                                             <p className="text-xs text-gray-400">Protein</p>
-                                            <p className="font-semibold">20g</p>
+                                            <p className="font-semibold">{selectedMakanan.protein}g</p>
                                         </div>
 
                                         <div className="bg-gray-100 rounded-lg p-3 text-center">
                                             <p className="text-xs text-gray-400">Karbo</p>
-                                            <p className="font-semibold">40g</p>
+                                            <p className="font-semibold">{selectedMakanan.karbohidrat}g</p>
                                         </div>
 
                                         <div className="bg-gray-100 rounded-lg p-3 text-center">
                                             <p className="text-xs text-gray-400">Lemak</p>
-                                            <p className="font-semibold">10g</p>
+                                            <p className="font-semibold">{selectedMakanan.lemak}g</p>
                                         </div> 
                                     </div>
 
                                     <div>
                                         <p className="text-gray-400">Deskripsi</p>
                                         <p className="leading-relaxed">
-                                            Nasi ayam sehat dengan protein tinggi, cocok untuk diet dan menjaga nutrisi harian.
+                                            {selectedMakanan.deskripsi}
                                         </p>
                                     </div>
                                 </div>
@@ -180,12 +389,6 @@ export default function Makanan() {
                                         className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm"
                                     >
                                         Batal
-                                    </button>
-
-                                    <button
-                                        className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm shadow-md"
-                                    >
-                                        Edit
                                     </button>
                                 </div>
                             </div>
