@@ -376,6 +376,52 @@ class ProfilePageState extends State<ProfilePage> {
       uploadProfileImage();
     }
   }
+
+  Future<void> logout() async {
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/api/logout"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        await prefs.remove('token');
+
+        if (!mounted) return;
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginPage(),
+          ),
+          (route) => false,
+        );
+
+        Fluttertoast.showToast(
+          msg: "Logout berhasil 👋",
+        );
+
+      } else {
+
+        Fluttertoast.showToast(
+          msg: "Logout gagal",
+        );
+
+      }
+
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -703,12 +749,7 @@ class ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginPage(),
-                    ),
-                  );
+                  logout();
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,

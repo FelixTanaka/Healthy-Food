@@ -67,6 +67,9 @@ class RiwayatPageState extends State<RiwayatPage> {
               "status_transaksi":
                   item['status_transaksi'],
 
+              "status_order":
+                item['status_order'],
+
               "total_harga":
                   "Rp ${item['total_harga']}",
 
@@ -125,25 +128,6 @@ class RiwayatPageState extends State<RiwayatPage> {
       totalItem +=
           orderItem["jumlah"] as int;
     }
-    Color statusColor;
-    IconData statusIcon;
-
-    switch (item["status_transaksi"]) {
-      case "dibayar":
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-
-      case "Pending":
-        statusColor = Colors.orange;
-        statusIcon = Icons.access_time;
-        break;
-
-      default:
-        statusColor = Colors.red;
-        statusIcon = Icons.cancel;
-    }
-
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -195,37 +179,54 @@ class RiwayatPageState extends State<RiwayatPage> {
                   ],
                 ),
 
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.end,
 
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                  children: [
 
-                  child: Row(
-                    children: [
-                      Icon(
-                        statusIcon,
-                        size: 14,
-                        color: statusColor,
-                      ),
+                    Row(
+                      children: [
 
-                      const SizedBox(width: 4),
-
-                      Text(
-                        item["status_transaksi"],
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                        const Text(
+                          "Transaksi",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+
+                        const SizedBox(width: 6),
+
+                        buildPaymentStatus(
+                          item["status_transaksi"],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Row(
+                      children: [
+
+                        const Text(
+                          "Order",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.w500,
+                          ),
+                        ),
+
+                        const SizedBox(width: 6),
+
+                        buildOrderStatus(
+                          item["status_order"],
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -279,6 +280,116 @@ class RiwayatPageState extends State<RiwayatPage> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildPaymentStatus(
+    String status,
+  ) {
+
+    Color color;
+
+    switch (status) {
+
+      case "dibayar":
+        color = Colors.green;
+        break;
+
+      case "pending":
+        color = Colors.orange;
+        break;
+
+      case "gagal":
+        color = Colors.red;
+        break;
+
+      default:
+        color = Colors.grey;
+    }
+
+    return Container(
+
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+
+      decoration: BoxDecoration(
+        color:
+            color.withValues(alpha: 0.1),
+
+        borderRadius:
+            BorderRadius.circular(8),
+      ),
+
+      child: Text(
+        status,
+
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight:
+              FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget buildOrderStatus(
+    String status,
+  ) {
+
+    Color color;
+
+    switch (status) {
+
+      case "diproses":
+        color = Colors.blue;
+        break;
+
+      case "selesai":
+        color = Colors.green;
+        break;
+
+      case "dibatalkan":
+        color = Colors.red;
+        break;
+
+      case "menunggu_pembayaran":
+        color = Colors.orange;
+        break;
+
+      default:
+        color = Colors.grey;
+    }
+
+    return Container(
+
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+
+      decoration: BoxDecoration(
+        color:
+            color.withValues(alpha: 0.1),
+
+        borderRadius:
+            BorderRadius.circular(8),
+      ),
+
+      child: Text(
+        status,
+
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight:
+              FontWeight.w600,
         ),
       ),
     );

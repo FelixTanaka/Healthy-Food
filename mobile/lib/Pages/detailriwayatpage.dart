@@ -464,12 +464,54 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                   ],
                 ),
 
-                Text(
-                  data["status_transaksi"],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
+                Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.end,
+
+                  children: [
+
+                    Row(
+                      children: [
+
+                        const Text(
+                          "Transaksi",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.w500,
+                          ),
+                        ),
+
+                        const SizedBox(width: 6),
+
+                        buildPaymentStatus(
+                          data["status_transaksi"],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Row(
+                      children: [
+
+                        const Text(
+                          "Order",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.w500,
+                          ),
+                        ),
+
+                        const SizedBox(width: 6),
+
+                        buildOrderStatus(
+                          data["status_order"],
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -503,76 +545,164 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                       bottom: 16,
                     ),
 
-                    child: Row(
+                    child: Column(
                       children: [
+                        Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius:
+                                  BorderRadius.circular(8),
 
-                        ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(8),
+                              child: Image.network(
+                                "${ApiService.baseUrl}/storage/${makanan["gambar_makanan"]}",
 
-                          child: Image.network(
-                            "${ApiService.baseUrl}/storage/${makanan["gambar_makanan"]}",
-
-                            width: 70,
-                            height: 70,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
-
-                            children: [
-
-                              Text(
-                                makanan[
-                                    "nama_makanan"],
-                                style:
-                                    const TextStyle(
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-                                ),
+                                width: 70,
+                                height: 70,
+                                fit: BoxFit.cover,
                               ),
+                            ),
 
-                              const SizedBox(height: 2),
+                            const SizedBox(width: 12),
 
-                              Text(
-                                seller["nama_toko"],
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment
+                                        .start,
+
+                                children: [
+
+                                  Text(
+                                    makanan[
+                                        "nama_makanan"],
+                                    style:
+                                        const TextStyle(
+                                      fontWeight:
+                                          FontWeight
+                                              .bold,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 2),
+
+                                  Text(
+                                    seller["nama_toko"],
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+
+                                  const SizedBox(
+                                      height: 4),
+
+                                  Text(
+                                    "${item["jumlah"]} x Rp ${makanan["harga"]}",
+
+                                    style: TextStyle(
+                                      color:
+                                          Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
 
-                              const SizedBox(
-                                  height: 4),
+                            Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.end,
 
-                              Text(
-                                "${item["jumlah"]} x Rp ${makanan["harga"]}",
+                              children: [
 
-                                style: TextStyle(
-                                  color:
-                                      Colors.grey[600],
-                                  fontSize: 12,
+                                Text(
+                                  "Rp ${item["jumlah"] * makanan["harga"]}",
+
+                                  style: const TextStyle(
+                                    fontWeight:
+                                        FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
 
-                        Text(
-                          "Rp ${item["jumlah"] * makanan["harga"]}",
+                                const SizedBox(height: 16),
 
-                          style: const TextStyle(
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
+                                GestureDetector(
+
+                                  onTap: () async {
+                                    final result =
+                                        await Navigator.push(
+
+                                      context,
+
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            BeriUlasanPage(
+
+                                          orderItems: [item],
+
+                                          rating:
+                                              item["rating"],
+                                        ),
+                                      ),
+                                    );
+
+                                    if (result != null) {
+
+                                      setState(() {
+
+                                        item["rating"] = {
+
+                                          "nilai":
+                                              result["nilai"],
+
+                                          "komentar":
+                                              result["komentar"],
+                                        };
+                                      });
+                                    }
+                                  },
+
+                                  child: Row(
+                                    mainAxisSize:
+                                        MainAxisSize.min,
+
+                                    children: [
+
+                                      Icon(
+
+                                        item["rating"] == null
+                                            ? Icons.rate_review
+                                            : Icons.edit,
+
+                                        size: 16,
+                                        color: Colors.orange,
+                                      ),
+
+                                      const SizedBox(width: 4),
+
+                                      Text(
+
+                                        item["rating"] == null
+                                            ? "Beri Ulasan"
+                                            : "Edit",
+
+                                        style: const TextStyle(
+
+                                          color:
+                                              Colors.orange,
+
+                                          fontWeight:
+                                              FontWeight.w600,
+
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -772,54 +902,6 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
             child: ElevatedButton.icon(
 
               onPressed: () {
-
-                Navigator.push(
-                  context,
-
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        BeriUlasanPage(orderItems:data["order_items"]),
-                  ),
-                );
-              },
-
-              icon: const Icon(
-                Icons.rate_review,
-              ),
-
-              label: const Text(
-                "Beri Ulasan",
-              ),
-
-              style:
-                  ElevatedButton.styleFrom(
-
-                backgroundColor:
-                    Colors.white,
-
-                foregroundColor:
-                    Colors.orange,
-
-                side: const BorderSide(
-                  color: Colors.orange,
-                ),
-
-                padding:
-                    const EdgeInsets.symmetric(
-                  vertical: 14,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            width: double.infinity,
-
-            child: ElevatedButton.icon(
-
-              onPressed: () {
                 downloadPdf();
               },
 
@@ -847,6 +929,116 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
           ),
           const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  Widget buildPaymentStatus(
+    String status,
+  ) {
+
+    Color color;
+
+    switch (status.toLowerCase()) {
+
+      case "dibayar":
+        color = Colors.green;
+        break;
+
+      case "pending":
+        color = Colors.orange;
+        break;
+
+      case "gagal":
+        color = Colors.red;
+        break;
+
+      default:
+        color = Colors.grey;
+    }
+
+    return Container(
+
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+
+      decoration: BoxDecoration(
+        color:
+            color.withValues(alpha: 0.1),
+
+        borderRadius:
+            BorderRadius.circular(8),
+      ),
+
+      child: Text(
+        status,
+
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight:
+              FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget buildOrderStatus(
+    String status,
+  ) {
+
+    Color color;
+
+    switch (status.toLowerCase()) {
+
+      case "diproses":
+        color = Colors.blue;
+        break;
+
+      case "selesai":
+        color = Colors.green;
+        break;
+
+      case "dibatalkan":
+        color = Colors.red;
+        break;
+
+      case "menunggu_pembayaran":
+        color = Colors.orange;
+        break;
+
+      default:
+        color = Colors.grey;
+    }
+
+    return Container(
+
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+
+      decoration: BoxDecoration(
+        color:
+            color.withValues(alpha: 0.1),
+
+        borderRadius:
+            BorderRadius.circular(8),
+      ),
+
+      child: Text(
+        status,
+
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight:
+              FontWeight.w600,
+        ),
       ),
     );
   }

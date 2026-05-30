@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_service.dart';
 
 class AllReviewsPage extends StatelessWidget {
   final List<Map<String, dynamic>> reviews;
@@ -37,14 +38,38 @@ class AllReviewsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.orange.withValues(alpha: 0.2),
-                  child: Text(
-                    review["name"][0],
-                    style: const TextStyle(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  radius: 20,
+
+                  backgroundColor:
+                      Colors.orange.withValues(
+                    alpha: 0.2,
                   ),
+
+                  backgroundImage:
+
+                      review["user"]["profile"] != null
+
+                          ? NetworkImage(
+                              "${ApiService.baseUrl}/storage/${review["user"]["profile"]}",
+                            )
+
+                          : null,
+
+                  child:
+
+                      review["user"]["profile"] == null
+
+                          ? Text(
+
+                              review["user"]["username"][0],
+
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+
+                          : null,
                 ),
 
                 const SizedBox(width: 10),
@@ -53,32 +78,65 @@ class AllReviewsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
                         children: [
+
+                          Row(
+                            children: [
+
+                              Text(
+                                review["user"]["username"],
+
+                                style: const TextStyle(
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(width: 6),
+
+                              ...List.generate(5, (i) {
+
+                                return Icon(
+                                  i < review["nilai"]
+
+                                      ? Icons.star
+
+                                      : Icons.star_border,
+
+                                  size: 14,
+                                  color: Colors.amber,
+                                );
+                              }),
+                            ],
+                          ),
+
+                          const SizedBox(height: 2),
+
                           Text(
-                            review["name"],
+
+                            review["tanggal_rating"] == null
+
+                                ? "-"
+
+                                : review["tanggal_rating"]
+                                    .toString(),
+
                             style: const TextStyle(
-                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                              color: Colors.grey,
                             ),
                           ),
-                          const SizedBox(width: 6),
-
-                          ...List.generate(5, (i) {
-                            return Icon(
-                              i < review["rating"]
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              size: 14,
-                              color: Colors.amber,
-                            );
-                          }),
                         ],
                       ),
 
                       const SizedBox(height: 4),
 
                       Text(
-                        review["comment"],
+                        review["komentar"],
                         style: const TextStyle(
                           fontSize: 13,
                           height: 1.4,
