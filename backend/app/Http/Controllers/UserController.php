@@ -162,4 +162,13 @@ class UserController extends Controller
             'data' => $user
         ], 201);
     }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logout berhasil'
+        ]);
+    }
 }

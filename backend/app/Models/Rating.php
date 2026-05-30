@@ -16,6 +16,7 @@ class Rating extends Model
         'order_item_id',
         'nilai',
         'komentar',
+        'tanggal_rating',
     ];
 
     public function user()

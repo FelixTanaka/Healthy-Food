@@ -25,4 +25,9 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Makanan::class);
     }
+
+    public function rating()
+    {
+        return $this->hasOne(Rating::class, 'order_item_id', 'id');
+    }
 }

@@ -12,6 +12,7 @@ use App\Models\Keranjang;
 use App\Models\KeranjangItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Seller;
 
 class TransaksiController extends Controller
 {
@@ -46,7 +47,7 @@ class TransaksiController extends Controller
             'alamat_pengiriman' => $request->alamat_pengiriman,
             'total_harga' => $grandTotal,
             'status_transaksi' => 'belumBayar',
-            'status_order' => 'diproses',
+            'status_order' => 'menunggu_pembayaran',
             'external_id' => $externalId,
         ]);
 
@@ -112,6 +113,7 @@ class TransaksiController extends Controller
             $order->update([
                 'status_transaksi' => 'dibayar',
                 'tanggal_transaksi' => now(),
+                'status_order' => 'diproses',
                 'metode_transaksi' => $request->payment_method,
             ]);
 
@@ -128,6 +130,7 @@ class TransaksiController extends Controller
 
             $order->update([
                 'status_transaksi' => 'gagal',
+                'status_order' => 'dibatalkan',
             ]);
         }
 
@@ -149,7 +152,7 @@ class TransaksiController extends Controller
     {
         $userId = auth()->id();
 
-        $orders = Order::with(['orderItems.makanan.seller', 'user'])
+        $orders = Order::with(['orderItems.makanan.seller', 'user', 'orderItems.rating'])
 
             ->where(
                 'user_id',
@@ -182,6 +185,129 @@ class TransaksiController extends Controller
 
         return response()->json([
             'data' => $orders,
+        ]);
+    }
+
+    public function pesananSeller()
+    {
+       
+        $seller = Seller::where(
+                    'user_id',
+                    auth()->id()
+                )->first();
+
+        if (!$seller) {
+
+            return response()->json([
+                'message' => 'Seller tidak ditemukan'
+            ], 404);
+        }
+
+        $orders = Order::with([
+            'user',
+            'orderItems.makanan',
+        ])
+
+        ->whereHas(
+            'orderItems.makanan',
+            function ($query) use ($seller) {
+
+                $query->where(
+                    'seller_id',
+                    $seller->id
+                );
+            }
+        )
+
+        ->where(
+            'status_transaksi',
+            'dibayar'
+        )
+
+        ->latest('id')
+        ->get();
+
+        foreach ($orders as $order) {
+
+            $subtotal = 0;
+            $totalItem = 0;
+
+            foreach (
+                $order->orderItems as $item
+            ) {
+
+                if (
+                    $item->makanan->seller_id
+                    == $seller->id
+                ) {
+
+                    $subtotal +=
+                        $item->jumlah *
+                        $item->makanan->harga;
+
+                    $totalItem +=
+                        $item->jumlah;
+                }
+            }
+            
+            $biayaAdmin =
+                $subtotal * 0.10;
+
+            $order->subtotal_seller =
+                $subtotal;
+
+            $order->biaya_admin =
+                $biayaAdmin;
+
+            $order->total_item =
+                $totalItem;
+        }
+
+        return response()->json([
+            'data' => $orders
+        ]);
+    }
+
+    public function pesananSelesai($id)
+    {
+        $seller = Seller::where(
+            'user_id',
+            auth()->id()
+        )->first();
+
+        if (!$seller) {
+
+            return response()->json([
+                'message' => 'Seller tidak ditemukan'
+            ], 404);
+        }
+
+        $order = Order::whereHas(
+            'orderItems.makanan',
+            function ($query) use ($seller) {
+
+                $query->where(
+                    'seller_id',
+                    $seller->id
+                );
+            }
+        )
+
+        ->find($id);
+
+        if (!$order) {
+
+            return response()->json([
+                'message' => 'Pesanan tidak ditemukan'
+            ], 404);
+        }
+
+        $order->update([
+            'status_order' => 'selesai'
+        ]);
+
+        return response()->json([
+            'message' => 'Pesanan selesai'
         ]);
     }
 }

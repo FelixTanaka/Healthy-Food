@@ -34,4 +34,13 @@ class Makanan extends Model
     {
         return $this->belongsTo(Kategori::class);
     }
+
+    public function ratings()
+    {
+        return $this->hasMany(
+            Rating::class,
+            'makanan_id',
+            'id'
+        );
+    }
 }
