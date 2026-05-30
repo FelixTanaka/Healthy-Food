@@ -7,6 +7,7 @@ import 'package:mobile/services/api_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:mobile/Pages/loginpage.dart';
 
 class ProfileToko extends StatefulWidget {
   const ProfileToko({super.key});
@@ -22,6 +23,10 @@ class ProfileTokoState extends State<ProfileToko> {
   String jamBuka = "";
   String jamTutup = "";
   String fotoToko = "";
+  String username = "";
+  String email = "";
+  String noTelp = "";
+  String password = "";
 
   @override
   void initState() {
@@ -57,6 +62,9 @@ class ProfileTokoState extends State<ProfileToko> {
         jamBuka = data['data']['jam_buka'] ?? "";
         jamTutup = data['data']['jam_tutup'] ?? "";
         fotoToko = data['data']['foto_toko'] ?? "";
+        username = data['data']['user']['username'] ?? "";
+        email = data['data']['user']['email'] ?? "";
+        noTelp = data['data']['user']['no_telp'] ?? "";
       });
     }
   }
@@ -84,12 +92,13 @@ class ProfileTokoState extends State<ProfileToko> {
         toastLength: Toast.LENGTH_SHORT,
       );
     } else {
+      debugPrint(response.body);
+
       Fluttertoast.showToast(
-        msg: "Gagal update profile toko",
-        gravity: ToastGravity.TOP,
-        toastLength: Toast.LENGTH_SHORT,
+        msg: data['message']
+            .toString(),
       );
-    }
+          }
   }
 
   Future<void> pickImage(ImageSource source) async {
@@ -132,6 +141,52 @@ class ProfileTokoState extends State<ProfileToko> {
       Fluttertoast.showToast(
         msg: "Gagal upload foto",
       );
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/api/logout"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        await prefs.remove('token');
+
+        if (!mounted) return;
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginPage(),
+          ),
+          (route) => false,
+        );
+
+        Fluttertoast.showToast(
+          msg: "Logout berhasil 👋",
+        );
+
+      } else {
+
+        Fluttertoast.showToast(
+          msg: "Logout gagal",
+        );
+
+      }
+
+    } catch (e) {
+      debugPrint(e.toString());
     }
   }
 
@@ -273,6 +328,13 @@ class ProfileTokoState extends State<ProfileToko> {
 
             const SizedBox(height: 20),
 
+            Text("Profile Toko",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
             buildItem(
               label: "Nama Toko",
               value: namaToko,
@@ -353,6 +415,191 @@ class ProfileTokoState extends State<ProfileToko> {
                 });
               },
             ),
+
+            const SizedBox(height: 25),
+
+            Padding(
+
+              padding: EdgeInsets.symmetric(
+                horizontal: 20,
+              ),
+
+              child: Align(
+                alignment: Alignment.center,
+
+                child: Text(
+
+                  "Profile User",
+
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            buildItem(
+
+              label: "Username",
+
+              value: username,
+
+              icon: Icons.person,
+
+              onTap: () {
+
+                showEditField(
+
+                  context,
+
+                  "Username",
+
+                  username,
+
+                  (value) {
+
+                    setState(() {
+                      username = value;
+                    });
+
+                    updateSellerProfile({
+                      "username": value,
+                    });
+                  },
+                );
+              },
+            ),
+
+            buildItem(
+
+              label: "Email",
+
+              value: email,
+
+              icon: Icons.email,
+
+              onTap: () {
+
+                showEditField(
+
+                  context,
+
+                  "Email",
+
+                  email,
+
+                  (value) {
+
+                    setState(() {
+                      email = value;
+                    });
+
+                    updateSellerProfile({
+                      "email": value,
+                    });
+                  },
+                );
+              },
+            ),
+
+            buildItem(
+
+              label: "No Telepon",
+
+              value: noTelp,
+
+              icon: Icons.phone,
+
+              onTap: () {
+
+                showEditField(
+
+                  context,
+
+                  "No Telepon",
+
+                  noTelp,
+
+                  (value) {
+
+                    setState(() {
+                      noTelp = value;
+                    });
+
+                    updateSellerProfile({
+                      "no_telp": value,
+                    });
+                  },
+                );
+              },
+            ),
+
+            buildItem(
+
+              label: "Password",
+
+              value: "••••••••",
+
+              icon: Icons.lock,
+
+              onTap: () {
+
+                showEditField(
+
+                  context,
+
+                  "Password",
+
+                  "",
+
+                  (value) {
+
+                    updateSellerProfile({
+                      "password": value,
+                    });
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    logout();
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.logout, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        "Logout",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 30),
           ],
         ),

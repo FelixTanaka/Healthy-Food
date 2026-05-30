@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Makanan;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Seller;
+use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class MakananController extends Controller
 {
@@ -26,10 +27,16 @@ class MakananController extends Controller
 
         $gambar->storeAs('makanan', $namaGambar, 'public');
 
+        $translator = new GoogleTranslate('en');
+
+        $bahanInggris = $translator->translate(
+            $request->bahan
+        );
+
         $response = Http::asForm()->post(
             'https://api.spoonacular.com/recipes/parseIngredients?includeNutrition=true&apiKey=' . env('SPOONACULAR_API_KEY'),
             [
-                'ingredientList' => $request->bahan,
+                'ingredientList' => $bahanInggris,
 
                 'servings' => 1,
             ]
@@ -106,8 +113,24 @@ class MakananController extends Controller
     {
         $seller = Seller::where('user_id', Auth::id())->first();
 
-        $makanan = Makanan::with(['kategori', 'seller'])
+        $makanan = Makanan::with(['kategori', 'seller', 'ratings.user'])
+           ->withAvg(
+                'ratings',
+                'nilai'
+            )
+
+            ->withCount(
+                'ratings'
+            )
             ->where('seller_id', $seller->id)
+            ->orderByRaw("
+                CASE
+                    WHEN status = 'dikonfirmasi' THEN 1
+                    WHEN status = 'pending' THEN 2
+                    WHEN status = 'dibatalkan' THEN 3
+                    ELSE 4
+                END
+            ")
             ->get();
 
         return response()->json([
@@ -145,11 +168,16 @@ class MakananController extends Controller
         $karbohidrat = $makanan->karbohidrat;
 
         if ($request->filled('bahan')) {
+            $translator = new GoogleTranslate('en');
+
+            $bahanInggris = $translator->translate(
+                $request->bahan
+            );
 
             $response = Http::asForm()->post(
                 'https://api.spoonacular.com/recipes/parseIngredients?includeNutrition=true&apiKey=' . env('SPOONACULAR_API_KEY'),
                 [
-                    'ingredientList' => $request->bahan,
+                    'ingredientList' => $bahanInggris,
                     'servings' => 1,
                 ]
             );
@@ -320,8 +348,18 @@ class MakananController extends Controller
 
     public function makananPembeli()
     {
-        $makanan = Makanan::with(['kategori', 'seller'])
+        $makanan = Makanan::with(['kategori', 'seller', 'ratings.user'])
+        ->withAvg(
+            'ratings',
+            'nilai',
+        )
+        ->withCount('ratings')
             ->where('status', 'dikonfirmasi')
+            ->orderByDesc('ratings_avg_nilai')
+
+            ->orderByDesc(
+                'ratings_count'
+            )
             ->get();
 
         return response()->json([

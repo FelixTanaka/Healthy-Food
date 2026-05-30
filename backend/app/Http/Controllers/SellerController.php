@@ -5,12 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Seller;
+use App\Models\User;
 
 class SellerController extends Controller
 {
     public function getProfile()
     {
-        $seller = Seller::where('user_id', Auth::id())->first();
+        $seller = Seller::with('user')
+            ->where(
+                'user_id',
+                auth()->id()
+            )
+            ->first();
 
         return response()->json([
             'message' => "Profile toko berhasil diambil",
@@ -24,13 +30,37 @@ class SellerController extends Controller
             'user_id' => auth()->id()
         ]);
 
+        $user = auth()->user();
+
         $request->validate([
+            'username' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'no_telp' => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:6',
             'nama_toko' => 'nullable|string|max:255',
             'alamat' => 'nullable|string',
             'deskripsi' => 'nullable|string',
             'jam_buka' => 'nullable|string|max:20',
             'jam_tutup' => 'nullable|string|max:20',
         ]);
+
+         if ($request->filled('username')) {
+            $user->username = $request->username;
+        }
+
+        if ($request->filled('email')) {
+            $user->email = $request->email;
+        }
+
+        if ($request->filled('no_telp')) {
+            $user->no_telp = $request->no_telp;
+        }
+
+        if ($request->filled('password')) {
+            $user->password = bcrypt($request->password);
+        }
+
+        $user->save();
 
         if ($request->filled('nama_toko')) {
             $seller->nama_toko = $request->nama_toko;
@@ -56,7 +86,8 @@ class SellerController extends Controller
 
         return response()->json([
             'message' => 'Profile seller berhasil diupdate',
-            'data' => $seller
+            'user' => $user,
+            'seller' => $seller,
         ]);
     }
 

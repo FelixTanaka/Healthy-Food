@@ -17,6 +17,7 @@ class MenuPageState extends State<MenuPage> {
   final TextEditingController searchController = TextEditingController();
 
   List<dynamic> foods = [];
+  List<dynamic> filteredFoods = [];
 
   @override
   void initState() {
@@ -44,6 +45,7 @@ class MenuPageState extends State<MenuPage> {
 
         setState(() {
           foods = data["data"];
+          filteredFoods = data["data"];
         });
 
       } else {
@@ -53,6 +55,61 @@ class MenuPageState extends State<MenuPage> {
     } catch (e) {
       debugPrint(e.toString());
     }
+  }
+
+  void cariMakanan(String keyword) {
+
+    setState(() {
+
+      filteredFoods = foods.where((food) {
+
+        final namaMakanan =
+            food["nama_makanan"]
+                .toString()
+                .toLowerCase();
+
+        final kategori =
+            food["kategori"]["nama_kategori"]
+                .toString()
+                .toLowerCase();
+
+        final namaToko =
+            food["seller"]["nama_toko"]
+                .toString()
+                .toLowerCase();
+
+        final harga =
+            food["harga"]
+                .toString();
+
+        final rating =
+            (food["ratings_avg_nilai"] ?? 0)
+                .toString();
+
+        final search =
+            keyword.toLowerCase();
+
+        return
+
+            namaMakanan.contains(search)
+
+            ||
+
+            kategori.contains(search)
+
+            ||
+
+            namaToko.contains(search)
+
+            ||
+
+            harga.contains(search)
+
+            ||
+
+            rating.contains(search);
+      }).toList();
+    });
   }
 
   Future<void> tambahKeranjang(int makananId) async {
@@ -117,6 +174,7 @@ class MenuPageState extends State<MenuPage> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: searchController,
+              onChanged: cariMakanan,
               decoration: InputDecoration(
                 hintText: "Cari makanan...",
                 prefixIcon: const Icon(Icons.search),
@@ -134,7 +192,7 @@ class MenuPageState extends State<MenuPage> {
           Expanded(
             child: GridView.builder(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              itemCount: foods.length,
+              itemCount: filteredFoods.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, 
                 crossAxisSpacing: 12,
@@ -142,7 +200,7 @@ class MenuPageState extends State<MenuPage> {
                 childAspectRatio: 0.65, 
               ),
               itemBuilder: (context, index) {
-                final food = foods[index];
+                final food = filteredFoods[index];
 
                 return InkWell(
                   onTap: () {
@@ -253,6 +311,7 @@ class MenuPageState extends State<MenuPage> {
 
                               Row(
                                 children: [
+
                                   const Icon(
                                     Icons.star,
                                     color: Colors.orange,
@@ -262,7 +321,13 @@ class MenuPageState extends State<MenuPage> {
                                   const SizedBox(width: 4),
 
                                   Text(
-                                    "5",
+
+                                    food["ratings_count"] == 0
+
+                                        ? "Belum ada ulasan"
+
+                                        : "${double.parse(food["ratings_avg_nilai"].toString()).toStringAsFixed(1)} (${food["ratings_count"] ?? 0})",
+
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,

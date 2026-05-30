@@ -62,6 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/riwayat-transaksi', [TransaksiController::class, 'riwayatTransaksi']);
 
     Route::post('/rating', [RatingController::class, 'store']);
+
+    Route::put('/rating/{id}', [RatingController::class, 'update']);
 });
 
 Route::post('/xendit-callback', [TransaksiController::class, 'xenditCallback']);
@@ -82,6 +84,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::delete('/makanan/{id}', [MakananController::class, 'destroy']);
 
+    Route::get('/pesanan-seller', [TransaksiController::class, 'pesananSeller']);
+
+    Route::put('/pesanan-selesai/{id}', [TransaksiController::class, 'pesananSelesai']);
+
+    Route::post('/logout', [UserController::class , 'logout']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {

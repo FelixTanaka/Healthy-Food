@@ -7,36 +7,23 @@ class DetailMenuPage extends StatelessWidget {
 
   DetailMenuPage({super.key, required this.item});
 
-  final List<Map<String, dynamic>> reviews = [
-    {
-      "name": "Andi",
-      "comment": "Enak banget! cocok buat diet 🔥",
-      "rating": 5
-    },
-    {
-      "name": "Budi",
-      "comment": "Rasanya clean dan gak berminyak 👍",
-      "rating": 4
-    },
-    {
-      "name": "Andi",
-      "comment": "Enak banget! cocok buat diet 🔥",
-      "rating": 5
-    },
-    {
-      "name": "Budi",
-      "comment": "Rasanya clean dan gak berminyak 👍",
-      "rating": 4
-    },
-    {
-      "name": "Budi",
-      "comment": "Rasanya clean dan gak berminyak 👍",
-      "rating": 4
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    double rating = item["ratings_avg_nilai"] == null
+
+      ? 0.0
+
+      : double.parse(
+          item["ratings_avg_nilai"]
+              .toString(),
+        );
+
+    final List<Map<String, dynamic>>
+    reviews =
+
+    List<Map<String, dynamic>>.from(
+      item["ratings"] ?? [],
+    );
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Stack(
@@ -127,27 +114,69 @@ class DetailMenuPage extends StatelessWidget {
                               ),
 
                               const SizedBox(height: 8),
-
+                              
                               Row(
                                 children: [
-                                  ...List.generate(5, (index) {
-                                    return Icon(
-                                      index < (item["rating"] ?? 4)
-                                          ? Icons.star
-                                          : Icons.star_border,
+
+                                   ...List.generate(5, (index) {
+
+                                    if (index < rating.floor()) {
+
+                                      return const Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                        size: 16,
+                                      );
+
+                                    } else if (
+
+                                      index < rating &&
+                                      rating % 1 >= 0.5
+
+                                    ) {
+
+                                      return const Icon(
+                                        Icons.star_half,
+                                        color: Colors.amber,
+                                        size: 16,
+                                      );
+                                    }
+
+                                    return const Icon(
+                                      Icons.star_border,
                                       color: Colors.amber,
                                       size: 16,
                                     );
                                   }),
+
                                   const SizedBox(width: 6),
+
                                   Text(
-                                    "${item["rating"] ?? 4.0}",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+
+                                    item["ratings_avg_nilai"] == null
+
+                                        ? "0.0"
+
+                                        : double.parse(
+                                            item["ratings_avg_nilai"]
+                                                .toString(),
+                                          ).toStringAsFixed(1),
+
+                                    style: const TextStyle(
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
                                   ),
+
                                   const SizedBox(width: 4),
+
                                   Text(
-                                    "(${item["reviews"] ?? 120})",
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    "(${item["ratings_count"]})",
+
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -174,10 +203,12 @@ class DetailMenuPage extends StatelessWidget {
 
                                   const SizedBox(width: 10),
 
-                                  const Icon(
-                                    Icons.storefront,
-                                    size: 14,
-                                    color: Colors.grey,
+                                  CircleAvatar(
+                                    radius: 12,
+
+                                    backgroundImage: NetworkImage(
+                                      "${ApiService.baseUrl}/storage/${item["seller"]["foto_toko"]}",
+                                    ),
                                   ),
 
                                   const SizedBox(width: 6),
@@ -351,14 +382,42 @@ class DetailMenuPage extends StatelessWidget {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         CircleAvatar(
-                                          backgroundColor: Colors.orange.withValues(alpha: 0.2),
-                                          child: Text(
-                                            review["name"][0],
-                                            style: const TextStyle(
-                                              color: Colors.orange,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          radius: 20,
+
+                                          backgroundColor:
+                                              Colors.orange.withValues(
+                                            alpha: 0.2,
                                           ),
+
+                                          backgroundImage:
+
+                                              review['user']['profile']
+                                                          != null
+
+                                                  ? NetworkImage(
+                                                      "${ApiService.baseUrl}/storage/${review['user']['profile']}",
+                                                    )
+
+                                                  : null,
+
+                                          child:
+                                              review['user']['profile']
+                                                          == null
+
+                                                  ? Text(
+
+                                                      review['user']
+                                                          ["username"][0]
+                                                              .toUpperCase(),
+
+                                                      style: const TextStyle(
+                                                        color: Colors.orange,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    )
+
+                                                  : null,
                                         ),
 
                                         const SizedBox(width: 10),
@@ -367,32 +426,65 @@ class DetailMenuPage extends StatelessWidget {
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Row(
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+
                                                 children: [
+
+                                                  Row(
+                                                    children: [
+
+                                                      Text(
+                                                        review['user']["username"],
+
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+
+                                                      const SizedBox(width: 6),
+
+                                                      ...List.generate(5, (index) {
+
+                                                        return Icon(
+                                                          index < review["nilai"]
+
+                                                              ? Icons.star
+
+                                                              : Icons.star_border,
+
+                                                          size: 14,
+                                                          color: Colors.amber,
+                                                        );
+                                                      }),
+                                                    ],
+                                                  ),
+
+                                                  const SizedBox(height: 2),
+
                                                   Text(
-                                                    review["name"],
+
+                                                    review["tanggal_rating"] == null
+
+                                                        ? "-"
+
+                                                        : review["tanggal_rating"]
+                                                            .toString(),
+
                                                     style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 11,
+                                                      color: Colors.grey,
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 6),
-
-                                                  ...List.generate(5, (index) {
-                                                    return Icon(
-                                                      index < review["rating"]
-                                                          ? Icons.star
-                                                          : Icons.star_border,
-                                                      size: 14,
-                                                      color: Colors.amber,
-                                                    );
-                                                  }),
                                                 ],
                                               ),
-
+                                              
                                               const SizedBox(height: 4),
                                   
                                               Text(
-                                                review["comment"],
+                                                review["komentar"],
                                                 style: const TextStyle(
                                                   fontSize: 12,
                                                   height: 1.4, 

@@ -53,11 +53,49 @@ class RatingController extends Controller
 
             'komentar' =>
                 $request->komentar,
+
+            'tanggal_rating' => now(),
         ]);
 
         return response()->json([
             'message' => 'Ulasan berhasil dikirim',
             'data' => $rating,
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+
+            'nilai' =>
+                'required|integer|min:1|max:5',
+
+            'komentar' =>
+                'required',
+        ]);
+
+        $rating = Rating::findOrFail($id);
+
+        if ($rating->user_id != auth()->id()) {
+
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $rating->update([
+
+            'nilai' =>
+                $request->nilai,
+
+            'komentar' =>
+                $request->komentar,
+        ]);
+
+        return response()->json([
+
+            'message' =>
+                'Ulasan berhasil diupdate',
         ]);
     }
 }

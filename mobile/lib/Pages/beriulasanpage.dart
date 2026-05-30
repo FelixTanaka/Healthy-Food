@@ -9,9 +9,13 @@ class BeriUlasanPage extends StatefulWidget {
 
   final List<dynamic> orderItems;
 
+
+  final dynamic rating;
+
   const BeriUlasanPage({
     super.key,
     required this.orderItems,
+    this.rating,
   });
 
   @override
@@ -28,15 +32,21 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
   void initState() {
     super.initState();
 
-    for (var item
-        in widget.orderItems) {
+    for (var item in widget.orderItems) {
 
-      ratings[item["id"]] = 0;
+      final itemId = item["id"];
 
-      komentarControllers[item["id"]] =
-          TextEditingController();
+      ratings[itemId] =
+          widget.rating?["nilai"] ?? 0;
+
+      komentarControllers[itemId] =
+          TextEditingController(
+            text:
+              widget.rating?["komentar"] ?? "",
+          );
     }
   }
+
   Future<void> kirimUlasan() async {
 
     try {
@@ -51,38 +61,73 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
       for (var item
           in widget.orderItems) {
 
-        final response =
-            await http.post(
+        http.Response response;
 
-          Uri.parse(
-            "${ApiService.baseUrl}/api/rating",
-          ),
+        if (widget.rating == null) {
 
-          headers: {
+          response = await http.post(
 
-            "Accept":
-                "application/json",
+            Uri.parse(
+              "${ApiService.baseUrl}/api/rating",
+            ),
 
-            "Authorization":
-                "Bearer $token",
-          },
+            headers: {
 
-          body: {
+              "Accept":
+                  "application/json",
 
-            "order_item_id":
-                item["id"].toString(),
+              "Authorization":
+                  "Bearer $token",
+            },
 
-            "nilai":
-                (ratings[item["id"]] ?? 0)
-                    .toString(),
+            body: {
 
-            "komentar":
-                komentarControllers[
-                        item["id"]]
-                    ?.text ??
-                "",
-          },
-        );
+              "order_item_id":
+                  item["id"].toString(),
+
+              "nilai":
+                  (ratings[item["id"]] ?? 0)
+                      .toString(),
+
+              "komentar":
+                  komentarControllers[
+                          item["id"]]
+                      ?.text ??
+                  "",
+            },
+          );
+
+        } else {
+
+          response = await http.put(
+
+            Uri.parse(
+              "${ApiService.baseUrl}/api/rating/${widget.rating["id"]}",
+            ),
+
+            headers: {
+
+              "Accept":
+                  "application/json",
+
+              "Authorization":
+                  "Bearer $token",
+            },
+
+            body: {
+
+              "nilai":
+                  (ratings[item["id"]] ?? 0)
+                      .toString(),
+
+              "komentar":
+                  komentarControllers[
+                          item["id"]]
+                      ?.text ??
+                  "",
+            },
+          );
+        }
 
         final data =
             jsonDecode(response.body);
@@ -105,7 +150,20 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
 
       if (!mounted) return;
 
-      Navigator.pop(context);
+      final firstItem =
+    widget.orderItems.first;
+
+      Navigator.pop(context,{
+        "nilai":
+            ratings[firstItem["id"]],
+
+        "komentar":
+            komentarControllers[
+                firstItem["id"]]
+                ?.text,
+      }
+      
+      );
 
     } catch (e) {
 
@@ -125,7 +183,11 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
 
       appBar: AppBar(
         title:
-            const Text("Beri Ulasan"),
+            Text(
+              widget.rating == null
+                  ? "Beri Ulasan"
+                  : "Edit Ulasan",
+            ),
 
         backgroundColor:
             Colors.white,
@@ -447,8 +509,10 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
               ),
             ),
 
-            child: const Text(
-              "Kirim Semua Ulasan",
+            child: Text(
+              widget.rating == null
+              ? "Kirim Ulasan"
+              : "Update Ulasan",
 
               style: TextStyle(
                 fontSize: 16,

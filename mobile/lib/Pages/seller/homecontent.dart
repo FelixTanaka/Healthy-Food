@@ -18,6 +18,10 @@ class MenuPage extends StatefulWidget {
 class MenuPageState extends State<MenuPage> {
   List<Map<String, dynamic>> menuList = [];
 
+  List<Map<String, dynamic>> filteredMenu = [];
+
+  TextEditingController searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +52,11 @@ class MenuPageState extends State<MenuPage> {
         setState(() {
 
           menuList = List<Map<String, dynamic>>.from(data["data"]);
+
+
+          filteredMenu =
+              List<Map<String, dynamic>>.from(
+                  data["data"]);
 
         });
 
@@ -119,6 +128,56 @@ class MenuPageState extends State<MenuPage> {
     }
   }
 
+  void searchMenu(String value) {
+
+    setState(() {
+
+      filteredMenu =
+          menuList.where((item) {
+
+        final nama =
+            item["nama_makanan"]
+                .toString()
+                .toLowerCase();
+
+        final harga =
+            item["harga"]
+                .toString()
+                .toLowerCase();
+
+        final status =
+            item["status"]
+                .toString()
+                .toLowerCase();
+
+        final rating =
+
+            item["ratings_avg_nilai"] == null
+
+                ? "0"
+
+                : double.parse(
+                    item[
+                      "ratings_avg_nilai"]
+                      .toString(),
+                  ).toStringAsFixed(1);
+
+        final query =
+            value.toLowerCase();
+
+        return
+
+            nama.contains(query) ||
+
+            harga.contains(query) ||
+
+            status.contains(query) ||
+
+            rating.contains(query);
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -132,6 +191,8 @@ class MenuPageState extends State<MenuPage> {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: searchController,
+                     onChanged: searchMenu,
                     decoration: InputDecoration(
                       hintText: "Cari menu...",
                       prefixIcon: const Icon(Icons.search),
@@ -176,9 +237,9 @@ class MenuPageState extends State<MenuPage> {
 
           Expanded(
             child: ListView.builder(
-              itemCount: menuList.length,
+              itemCount: filteredMenu.length,
               itemBuilder: (context, index) {
-                final item = menuList[index];
+                final item = filteredMenu[index];
 
                 return GestureDetector(
                   onTap: () {
@@ -195,103 +256,167 @@ class MenuPageState extends State<MenuPage> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            bottomLeft: Radius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+
+                      child: Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
+                        children: [
+
+                          ClipRRect(
+                            borderRadius:
+                                BorderRadius.circular(12),
+
+                            child: Image.network(
+
+                              "${ApiService.baseUrl}/storage/${item["gambar_makanan"]}",
+
+                              width: 90,
+                              height: 90,
+
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                          child: Image.network(
-                            "${ApiService.baseUrl}/storage/${item["gambar_makanan"]}",
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          )
-                        ),
 
-                        const SizedBox(width: 12),
+                          const SizedBox(width: 12),
 
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Expanded(
+
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+
+                              children: [
+
+                                Text(
+                                  item["nama_makanan"],
+
+                                  maxLines: 1,
+
+                                  overflow:
+                                      TextOverflow.ellipsis,
+
+                                  style: const TextStyle(
+                                    fontWeight:
+                                        FontWeight.bold,
+
+                                    fontSize: 16,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 6),
+
+                                Text(
+                                  "Rp ${item["harga"]}",
+
+                                  style: const TextStyle(
+                                    fontWeight:
+                                        FontWeight.w600,
+
+                                    fontSize: 14,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                buildStatusMenu(
+                                  item["status"],
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+
+                                    const Icon(
+                                      Icons.star,
+                                      color: Colors.orange,
+                                      size: 16,
+                                    ),
+
+                                    const SizedBox(width: 4),
+
+                                    Text(
+
+                                      item["ratings_avg_nilai"]
+                                              == null
+
+                                          ? "0.0"
+
+                                          : double.parse(
+                                              item[
+                                                  "ratings_avg_nilai"]
+                                                  .toString(),
+                                            ).toStringAsFixed(1),
+
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight:
+                                            FontWeight.w600,
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 4),
+
+                                    Text(
+                                      "(${item["ratings_count"]})",
+
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Column(
                             children: [
-                              Text(
-                                item["nama_makanan"],
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
                                 ),
+
+                                onPressed: () async {
+
+                                  final result =
+                                      await Navigator.push(
+
+                                    context,
+
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          EditMenuPage(
+                                        item: item,
+                                      ),
+                                    ),
+                                  );
+
+                                  if (result == true) {
+                                    getMenu();
+                                  }
+                                },
                               ),
 
-                              const SizedBox(height: 4),
-
-                              Text(
-                                "Rp ${item["harga"]}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
                                 ),
-                              ),
 
-                              const SizedBox(height: 6),
-
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.star,
-                                    color: Colors.orange,
-                                    size: 16,
-                                  ),
-
-                                  const SizedBox(width: 3),
-
-                                  Text(
-                                    "4.5",
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-
-                                  const SizedBox(width: 10),
-
-                                  Text(
-                                    item["status"],
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.blueGrey,
-                                    ),
-                                  ),
-                                ],
+                                onPressed: () {
+                                  deleteMenu(item["id"]);
+                                },
                               ),
                             ],
                           ),
-                        ),
-
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () async {
-                            final result =  await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EditMenuPage(item: item),
-                              ),
-                            );
-
-                            if (result == true) {
-                              getMenu();
-                            }
-                          },
-                        ),
-
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            deleteMenu(item["id"]);
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -299,6 +424,57 @@ class MenuPageState extends State<MenuPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget buildStatusMenu(
+    String status,
+  ) {
+
+    Color color;
+
+    switch (status) {
+
+      case "dikonfirmasi":
+        color = Colors.green;
+        break;
+
+      case "pending":
+        color = Colors.orange;
+        break;
+
+      case "ditolak":
+        color = Colors.red;
+        break;
+
+      default:
+        color = Colors.grey;
+    }
+
+    return Container(
+
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 4,
+      ),
+
+      decoration: BoxDecoration(
+        color:
+            color.withValues(alpha: 0.1),
+
+        borderRadius:
+            BorderRadius.circular(8),
+      ),
+
+      child: Text(
+        status,
+
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
