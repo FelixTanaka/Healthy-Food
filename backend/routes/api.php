@@ -13,6 +13,7 @@ use App\Http\Controllers\MakananController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\RatingController;
+use App\Http\Controllers\DashboardController;
 
 
 Route::post('/register-pembeli', [UserController::class, 'registerPembeli']);
@@ -64,6 +65,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/rating', [RatingController::class, 'store']);
 
     Route::put('/rating/{id}', [RatingController::class, 'update']);
+
+    Route::get('/kategori', [KategoriController::class, 'index']);
+
+    Route::get('/menu-populer', [MakananController::class, 'menuPopuler']);
+
+    Route::get('/rekomendasi', [MakananController::class, 'rekomendasi']);
+
+    Route::delete('/rating/{id}', [RatingController::class, 'destroy']);
 });
 
 Route::post('/xendit-callback', [TransaksiController::class, 'xenditCallback']);
@@ -89,6 +98,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/pesanan-selesai/{id}', [TransaksiController::class, 'pesananSelesai']);
 
     Route::post('/logout', [UserController::class , 'logout']);
+
+    Route::get('/seller/laporan-kategori', [KategoriController::class, 'laporanKategori']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -105,5 +116,38 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::delete('/admin/makanan/{id}', [MakananController::class, 'deleteMakananAdmin']);
 
+    Route::get('/users', [UserController::class, 'index']);
+
+    Route::post('/users', [UserController::class, 'store']);
+
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    Route::get('/admin/sellers', [SellerController::class, 'index']);
+
+    Route::get('/admin/transaksi', [TransaksiController::class, 'transaksiAdmin']);
+
+    Route::delete('/admin/transaksi/{id}', [TransaksiController::class,'hapusTransaksi']);
+
+    Route::get('/admin/laporan-transaksi', [TransaksiController::class,'laporanTransaksi']);
+
+    Route::get('/admin/dashboard/transaksi-bulanan', [DashboardController::class,'transaksiBulanan']);
+
+    Route::get('/admin/dashboard/status-transaksi', [DashboardController::class,'statusTransaksi']);
+
+    Route::get('/admin/dashboard/pendapatan-admin', [DashboardController::class,'pendapatanAdmin']);
+
+    Route::get('/admin/dashboard/statistik', [DashboardController::class,'statistik']);
+
+    Route::post('/kategori', [KategoriController::class, 'store']);
+
+    Route::put('/kategori/{id}', [KategoriController::class, 'update']);
+
+    Route::delete('/kategori/{id}', [KategoriController::class, 'destroy']);
+
+    Route::put('/seller/{id}', [SellerController::class, 'updateSeller']);
+
+    Route::delete('/seller/{id}', [SellerController::class, 'destroy']);
+
+    Route::put('/users/{id}', [UserController::class, 'update']);
 });
 

@@ -98,4 +98,21 @@ class RatingController extends Controller
                 'Ulasan berhasil diupdate',
         ]);
     }
+
+    public function destroy($id)
+    {
+        $rating = Rating::findOrFail($id);
+
+        if ($rating->user_id != auth()->id()) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $rating->delete();
+
+        return response()->json([
+            'message' => 'Ulasan berhasil dihapus',
+        ]);
+    }
 }

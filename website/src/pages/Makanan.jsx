@@ -121,7 +121,7 @@ export default function Makanan() {
 
     const [currentPage, setCurrentPage] = useState(1);
 
-    const itemsPerPage = 8;
+    const itemsPerPage = 10;
 
     const lastIndex = currentPage * itemsPerPage;
 

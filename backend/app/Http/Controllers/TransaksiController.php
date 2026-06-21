@@ -14,6 +14,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Seller;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class TransaksiController extends Controller
 {
     public function createInvoice(Request $request)
@@ -46,6 +48,7 @@ class TransaksiController extends Controller
             'user_id' => $userId,
             'alamat_pengiriman' => $request->alamat_pengiriman,
             'total_harga' => $grandTotal,
+            'biaya_admin' => $biayaAdmin,
             'status_transaksi' => 'belumBayar',
             'status_order' => 'menunggu_pembayaran',
             'external_id' => $externalId,
@@ -309,5 +312,118 @@ class TransaksiController extends Controller
         return response()->json([
             'message' => 'Pesanan selesai'
         ]);
+    }
+
+    public function transaksiAdmin()
+    {
+        $orders = Order::with([
+            'user',
+            'orderItems.makanan.seller'
+        ])
+        ->latest('id')
+        ->get();
+
+
+        foreach($orders as $order){
+
+            $jumlahItem = 0;
+
+
+            foreach($order->orderItems as $item){
+
+                $jumlahItem += $item->jumlah;
+
+            }
+
+
+            $order->jumlah_item = $jumlahItem;
+
+        }
+
+
+        return response()->json([
+            'data'=>$orders
+        ]);
+    }
+
+    public function hapusTransaksi($id)
+    {
+        $order = Order::find($id);
+
+
+        if(!$order){
+
+            return response()->json([
+                'message'=>'Transaksi tidak ditemukan'
+            ],404);
+
+        }
+
+
+        OrderItem::where(
+            'order_id',
+            $order->id
+        )->delete();
+
+        $order->delete();
+
+        return response()->json([
+            'message'=>'Transaksi berhasil dihapus'
+        ]);
+
+    }
+
+    public function laporanTransaksi(Request $request)
+    {
+
+        $query = Order::with([
+            'user',
+            'orderItems.makanan.seller'
+        ]);
+
+
+        if($request->tanggal_mulai){
+
+            $query->whereDate(
+                'tanggal_transaksi',
+                '>=',
+                $request->tanggal_mulai
+            );
+
+        }
+
+
+        if($request->tanggal_selesai){
+
+            $query->whereDate(
+                'tanggal_transaksi',
+                '<=',
+                $request->tanggal_selesai
+            );
+
+        }
+
+
+        if($request->status_transaksi){
+
+            $query->where(
+                'status_transaksi',
+                $request->status_transaksi
+            );
+
+        }
+
+        $orders = $query->latest('id')->get();
+
+        $orders->transform(function ($order) {
+            $order->jumlah_item = $order->orderItems->sum('jumlah');
+            return $order;
+        });
+
+
+        return response()->json([
+            "data"=>$orders
+        ]);
+
     }
 }

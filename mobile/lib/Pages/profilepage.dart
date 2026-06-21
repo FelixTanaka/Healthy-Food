@@ -27,7 +27,7 @@ class ProfilePageState extends State<ProfilePage> {
   String tinggiBadan = "";
   String umur = "";
   String jenisKelamin = "";
-
+  String goal = "";
   File? profileImage;
 
   String profile = "";
@@ -147,6 +147,7 @@ class ProfilePageState extends State<ProfilePage> {
           umur = health['umur'].toString();
 
           jenisKelamin = health['jenis_kelamin'];
+          goal = health['goal'];
         });
       }
 
@@ -160,6 +161,7 @@ class ProfilePageState extends State<ProfilePage> {
     String? tinggi,
     String? umurBaru,
     String? jenisKelaminBaru,
+    String? goalBaru,
   }) async {
 
     try {
@@ -180,6 +182,7 @@ class ProfilePageState extends State<ProfilePage> {
           if (umurBaru != null) "umur": umurBaru,
           if (jenisKelaminBaru != null)
             "jenis_kelamin": jenisKelaminBaru,
+          if (goalBaru != null) "goal": goalBaru,
         },
       );
 
@@ -720,6 +723,84 @@ class ProfilePageState extends State<ProfilePage> {
 
                             setState(() {
                               jenisKelamin = "female";
+                            });
+
+                            Navigator.pop(context);
+                          },
+                        ),
+
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+
+          buildProfileItem(
+            label: "Goal",
+            value: goal.isEmpty ? "normal" : goal,
+            icon: Icons.track_changes,
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.white,
+                builder: (context) {
+                  return SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+
+                        ListTile(
+                          leading: const Icon(Icons.restaurant),
+                          title: const Text("Normal"),
+                          onTap: () {
+                            updateHealthProfile(goalBaru: "normal");
+
+                            setState(() {
+                              goal = "normal";
+                            });
+
+                            Navigator.pop(context);
+                          },
+                        ),
+
+                        ListTile(
+                          leading: const Icon(Icons.eco),
+                          title: const Text("Vegetarian"),
+                          onTap: () {
+                            updateHealthProfile(goalBaru: "vegetarian");
+
+                            setState(() {
+                              goal = "vegetarian";
+                            });
+
+                            Navigator.pop(context);
+                          },
+                        ),
+
+                        ListTile(
+                          leading: const Icon(Icons.fitness_center),
+                          title: const Text("Naik Berat Badan"),
+                          onTap: () {
+                            updateHealthProfile(goalBaru: "gain_weight");
+
+                            setState(() {
+                              goal = "gain_weight";
+                            });
+
+                            Navigator.pop(context);
+                          },
+                        ),
+
+                        ListTile(
+                          leading: const Icon(Icons.monitor_weight),
+                          title: const Text("Turun Berat Badan"),
+                          onTap: () {
+                            updateHealthProfile(goalBaru: "lose_weight");
+
+                            setState(() {
+                              goal = "lose_weight";
                             });
 
                             Navigator.pop(context);

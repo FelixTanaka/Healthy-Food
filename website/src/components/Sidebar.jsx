@@ -1,14 +1,42 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 export default function Sidebar() {
     const location = useLocation();
+    const navigate = useNavigate();
 
     const menus = [
         { name: "Dashboard", path: "/dashboard" },
         { name: "Seller", path: "/seller" },
         { name: "Makanan", path: "/makanan" },
-        { name: "Pembeli", path: "/pembeli" },
+        { name: "User", path: "/user" },
+        { name: "Transaksi", path: "/transaksi" },
+        { name: "Kategori", path: "/kategori" },
     ];
+
+    const handleLogout = async () => {
+        try {
+            await axios.post(
+                "http://localhost:8000/api/logout",
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            toast.success("Logout berhasil!");
+
+            navigate("/");
+
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     return (
         <div className="w-64 bg-white shadow-lg p-5 min-h-screen flex flex-col justify-between">
@@ -44,6 +72,7 @@ export default function Sidebar() {
             <div className="pt-4 border-t border-orange-400 -mx-5 px-5">
                 <button
                     className="w-full px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition"
+                    onClick={handleLogout}
                 >
                     Logout
                 </button>

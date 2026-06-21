@@ -6,6 +6,9 @@ import 'dart:io';
 import 'package:open_filex/open_filex.dart';
 import 'package:pdf/pdf.dart';
 import 'package:mobile/Pages/beriulasanpage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailRiwayatPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -386,6 +389,70 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
     await OpenFilex.open(file.path);
   }
 
+  Future<void> deleteRating(int ratingId, dynamic item) async {
+
+    try {
+
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      final token =
+          prefs.getString("token");
+
+
+      final response = await http.delete(
+
+        Uri.parse(
+          "${ApiService.baseUrl}/api/rating/$ratingId",
+        ),
+
+        headers: {
+
+          "Accept": "application/json",
+
+          "Authorization":
+              "Bearer $token",
+        },
+      );
+
+
+      final data =
+          jsonDecode(response.body);
+
+
+      if(response.statusCode == 200){
+
+        setState(() {
+
+          item["rating"] = null;
+
+        });
+
+
+        Fluttertoast.showToast(
+          msg: "Ulasan berhasil dihapus",
+        );
+
+
+      }else{
+
+        Fluttertoast.showToast(
+          msg: data["message"],
+        );
+
+      }
+
+
+    }catch(e){
+
+      Fluttertoast.showToast(
+        msg: e.toString(),
+      );
+
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -539,6 +606,9 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                   final seller =
                       makanan["seller"];
 
+                   final rating = item["rating"];
+                  final sudahReview = rating != null;    
+
                   return Padding(
                     padding:
                         const EdgeInsets.only(
@@ -652,6 +722,8 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
                                         item["rating"] = {
 
+                                          "id": result["id"],
+
                                           "nilai":
                                               result["nilai"],
 
@@ -670,10 +742,9 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
                                       Icon(
 
-                                        item["rating"] == null
-                                            ? Icons.rate_review
-                                            : Icons.edit,
-
+                                        sudahReview 
+                                            ? Icons.edit 
+                                            : Icons.rate_review,
                                         size: 16,
                                         color: Colors.orange,
                                       ),
@@ -682,9 +753,9 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
                                       Text(
 
-                                        item["rating"] == null
-                                            ? "Beri Ulasan"
-                                            : "Edit",
+                                        sudahReview 
+                                            ? "Edit Ulasan" 
+                                            : "Beri Ulasan",
 
                                         style: const TextStyle(
 
@@ -700,6 +771,43 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                                     ],
                                   ),
                                 ),
+                                if(sudahReview) ...[
+                                  const SizedBox(height: 8),
+
+                                  GestureDetector(
+                                    onTap: () {
+                                      deleteRating(
+                                        item["rating"]["id"],
+                                        item,
+                                      );
+
+                                    },
+
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+
+                                      children: const [
+
+                                        Icon(
+                                          Icons.delete,
+                                          size: 16,
+                                          color: Colors.red,
+                                        ),
+
+                                        SizedBox(width: 4),
+
+                                        Text(
+                                          "Hapus Ulasan",
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ],

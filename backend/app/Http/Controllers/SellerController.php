@@ -114,4 +114,84 @@ class SellerController extends Controller
             'data' => $seller
         ]);
     }
+
+    public function index()
+    {
+        $sellers = Seller::with('user')
+            ->withCount([
+                'makanan as makanan_count' => function ($query) {
+                    $query->where('status', 'dikonfirmasi');
+                }
+            ])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Daftar seller berhasil diambil',
+            'data' => $sellers
+        ]);
+    }
+
+    public function updateSeller(Request $request, $id)
+    {
+        $seller = Seller::find($id);
+
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller tidak ditemukan'
+            ], 404);
+        }
+
+        $request->validate([
+            'nama_toko' => 'nullable|string|max:255',
+            'alamat' => 'nullable|string',
+            'jam_buka' => 'nullable|string|max:20',
+            'jam_tutup' => 'nullable|string|max:20',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        if ($request->filled('nama_toko')) {
+            $seller->nama_toko = $request->nama_toko;
+        }
+
+        if ($request->filled('alamat')) {
+            $seller->alamat = $request->alamat;
+        }
+
+        if ($request->filled('jam_buka')) {
+            $seller->jam_buka = $request->jam_buka;
+        }
+
+        if ($request->filled('jam_tutup')) {
+            $seller->jam_tutup = $request->jam_tutup;
+        }
+
+        if ($request->filled('deskripsi')) {
+            $seller->deskripsi = $request->deskripsi;
+        }
+
+        $seller->save();
+
+        return response()->json([
+            'message' => 'Seller berhasil diupdate',
+            'data' => $seller
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+        $seller = Seller::find($id);
+
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller tidak ditemukan'
+            ], 404);
+        }
+
+        $seller->delete();
+
+        return response()->json([
+            'message' => 'Seller berhasil dihapus'
+        ], 200);
+    }
 }
