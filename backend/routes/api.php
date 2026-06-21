@@ -73,6 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/rekomendasi', [MakananController::class, 'rekomendasi']);
 
     Route::delete('/rating/{id}', [RatingController::class, 'destroy']);
+
+    Route::get('/berat-user', [HealthProfileController::class, 'getBeratUser']);
 });
 
 Route::post('/xendit-callback', [TransaksiController::class, 'xenditCallback']);

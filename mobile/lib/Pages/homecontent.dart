@@ -10,6 +10,8 @@ import 'package:mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mobile/services/step_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
@@ -25,6 +27,7 @@ class HomeContentState extends State<HomeContent> {
   double lemak = 0;
   int kaloriDikonsumsi = 0;
   int sisaKalori = 0;
+  int netKalori = 0;
 
   double proteinDikonsumsi = 0;
   double karboDikonsumsi = 0;
@@ -37,10 +40,18 @@ class HomeContentState extends State<HomeContent> {
   List makananPopuler = [];
   List makananRekomendasi = [];
 
+  int stepsRealtime = 0;
+  double kaloriTerbakar = 0;
+  final StepService stepService = StepService();
+
   @override
   void initState() {
     super.initState();
     loadData();
+
+     requestPermission().then((_) {
+      initStep();
+    });
   }
 
   Future<void> loadData() async {
@@ -49,6 +60,29 @@ class HomeContentState extends State<HomeContent> {
     await getKategori();
     await getMakananPopuler();
     await getRekomendasi();
+  }
+
+  Future<void> requestPermission() async {
+    await Permission.activityRecognition.request();
+  }
+
+  void initStep() async {
+    await stepService.initUserWeight(); 
+    listenStep();
+  }
+
+  void listenStep() {
+    stepService.stepStream.listen((data) {
+      setState(() {
+        stepsRealtime = data.steps;
+        kaloriTerbakar = data.calories;
+
+        netKalori = kaloriDikonsumsi - kaloriTerbakar.toInt();
+      });
+
+      print("STEP: $stepsRealtime | CAL: $kaloriTerbakar");
+      print("WEIGHT: ${stepService.weight}");
+    });
   }
 
   Future<void> getHealthProfile() async {
@@ -131,7 +165,7 @@ class HomeContentState extends State<HomeContent> {
           lemakDikonsumsi =
               data['lemak'].toDouble();
 
-         sisaKalori =
+          sisaKalori =
             (kalori - kaloriDikonsumsi)
                 .clamp(0, kalori);
 
@@ -352,7 +386,7 @@ class HomeContentState extends State<HomeContent> {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  "$kaloriDikonsumsi",
+                                  "$kaloriDikonsumsi kcal",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -386,6 +420,37 @@ class HomeContentState extends State<HomeContent> {
                                 SizedBox(height: 4),
                                 Text(
                                   "$kalori kcal",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.local_fire_department,
+                              size: 20,
+                              color: Colors.blueGrey,
+                            ),
+                            SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Terbakar",
+                                  style: TextStyle(color: Colors.blueGrey),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  "${kaloriTerbakar.toInt()} kcal",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
