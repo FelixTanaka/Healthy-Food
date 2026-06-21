@@ -48,7 +48,7 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
   }
 
   Future<void> kirimUlasan() async {
-
+    dynamic data;
     try {
 
       final prefs =
@@ -129,7 +129,7 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
           );
         }
 
-        final data =
+        data =
             jsonDecode(response.body);
 
         if (response.statusCode !=
@@ -154,6 +154,9 @@ class _BeriUlasanPageState extends State<BeriUlasanPage> {
     widget.orderItems.first;
 
       Navigator.pop(context,{
+           "id": widget.rating == null
+        ? data["data"]["id"]
+        : widget.rating["id"],
         "nilai":
             ratings[firstItem["id"]],
 

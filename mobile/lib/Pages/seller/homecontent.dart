@@ -7,6 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/Pages/seller/editmenupage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:io';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -22,10 +27,51 @@ class MenuPageState extends State<MenuPage> {
 
   TextEditingController searchController = TextEditingController();
 
+  List<dynamic> kategoriList=[];
+
+  DateTime? tanggalMulai;
+  DateTime? tanggalSelesai;
+
   @override
   void initState() {
     super.initState();
     getMenu();
+    getKategori();
+  }
+
+  Future<void> pilihTanggal(bool mulai) async {
+
+    final tanggal = await showDatePicker(
+
+      context: context,
+
+      initialDate: DateTime.now(),
+
+      firstDate: DateTime(2025),
+
+      lastDate: DateTime.now(),
+
+    );
+
+
+    if(tanggal != null){
+
+      setState((){
+
+        if(mulai){
+
+          tanggalMulai = tanggal;
+
+        }else{
+
+          tanggalSelesai = tanggal;
+
+        }
+
+      });
+
+    }
+
   }
 
   Future<void> getMenu() async {
@@ -128,6 +174,89 @@ class MenuPageState extends State<MenuPage> {
     }
   }
 
+  void tampilkanFilterLaporan() async {
+    DateTime? tempMulai = tanggalMulai;
+    DateTime? tempSelesai = tanggalSelesai;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text("Filter Laporan"),
+
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      final tgl = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                      );
+
+                      if (tgl != null) {
+                        setStateDialog(() => tempMulai = tgl);
+                      }
+                    },
+                    child: Text(
+                      tempMulai == null
+                          ? "Tanggal Mulai"
+                          : "${tempMulai!.day}-${tempMulai!.month}-${tempMulai!.year}",
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  ElevatedButton(
+                    onPressed: () async {
+                      final tgl = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                      );
+
+                      if (tgl != null) {
+                        setStateDialog(() => tempSelesai = tgl);
+                      }
+                    },
+                    child: Text(
+                      tempSelesai == null
+                          ? "Tanggal Selesai"
+                          : "${tempSelesai!.day}-${tempSelesai!.month}-${tempSelesai!.year}",
+                    ),
+                  ),
+                ],
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Batal"),
+                ),
+
+                ElevatedButton(
+                  onPressed: () {
+                    tanggalMulai = tempMulai;
+                    tanggalSelesai = tempSelesai;
+
+                    Navigator.pop(context);
+                    cetakLaporanSemuaKategori();
+                  },
+                  child: const Text("Cetak PDF"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void searchMenu(String value) {
 
     setState(() {
@@ -178,6 +307,164 @@ class MenuPageState extends State<MenuPage> {
     });
   }
 
+  Future<List<dynamic>> getLaporanKategori({
+    DateTime? mulai,
+    DateTime? selesai,
+  }) async {
+
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString("token");
+
+    String url = "${ApiService.baseUrl}/api/seller/laporan-kategori";
+
+    List<String> params = [];
+
+    if (mulai != null) {
+      params.add("tanggal_mulai=${mulai.toIso8601String().substring(0, 10)}");
+    }
+
+    if (selesai != null) {
+      params.add("tanggal_selesai=${selesai.toIso8601String().substring(0, 10)}");
+    }
+
+    if (params.isNotEmpty) {
+      url += "?${params.join("&")}";
+    }
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data["data"] ?? [];
+    }
+
+    return [];
+  }
+
+  Future<void> cetakLaporanSemuaKategori() async {
+    try {
+      final laporan = await getLaporanKategori(
+        mulai: tanggalMulai,
+        selesai: tanggalSelesai,
+      );
+
+      if (laporan.isEmpty) {
+        Fluttertoast.showToast(msg: "Tidak ada data laporan");
+        return;
+      }
+
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          build: (context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+
+                pw.Text(
+                  "Laporan Semua Kategori",
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+
+                pw.SizedBox(height: 10),
+
+                pw.Text(
+                  "Periode: "
+                  "${tanggalMulai == null ? '-' : '${tanggalMulai!.day}-${tanggalMulai!.month}-${tanggalMulai!.year}'}"
+                  " s/d "
+                  "${tanggalSelesai == null ? '-' : '${tanggalSelesai!.day}-${tanggalSelesai!.month}-${tanggalSelesai!.year}'}",
+                ),
+
+                pw.SizedBox(height: 20),
+
+                pw.TableHelper.fromTextArray(
+                  headers: [
+                    "No",
+                    "Kategori",
+                    "Total Menu",
+                    "Terjual",
+                    "Pendapatan",
+                  ],
+                  data: List.generate(laporan.length, (index) {
+                    final item = laporan[index];
+
+                    return [
+                      "${index + 1}",
+                      item["kategori"] ?? "-",
+                      item["jumlah_menu"].toString(),
+                      item["jumlah_terjual"].toString(),
+                      item["total_pendapatan"].toString(),
+                    ];
+                  }),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File("${dir.path}/laporan_kategori.pdf");
+
+      await file.writeAsBytes(await pdf.save());
+
+      OpenFilex.open(file.path);
+
+    } catch (e) {
+      debugPrint(e.toString());
+      Fluttertoast.showToast(msg: "Gagal membuat PDF");
+    }
+  }
+
+  Future<void> getKategori() async{
+
+
+    final prefs =
+    await SharedPreferences.getInstance();
+
+    String? token =
+    prefs.getString("token");
+
+
+    final response =
+    await http.get(
+
+    Uri.parse(
+    "${ApiService.baseUrl}/api/kategori"
+    ),
+
+    headers:{
+    "Authorization":"Bearer $token"
+    }
+
+    );
+
+
+    if(response.statusCode==200){
+
+    setState((){
+
+    kategoriList =
+    jsonDecode(response.body)["data"];
+
+    });
+
+    }
+
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -187,48 +474,193 @@ class MenuPageState extends State<MenuPage> {
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: searchController,
-                     onChanged: searchMenu,
-                    decoration: InputDecoration(
-                      hintText: "Cari menu...",
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
+                SizedBox(
+
+                  width: double.infinity,
+
+                  child: ElevatedButton.icon(
+
+                    onPressed: (){
+
+                        tampilkanFilterLaporan();
+
+                    },
+                    
+
+
+                    icon:
+                    const Icon(
+                      Icons.picture_as_pdf
                     ),
+
+
+                    label:
+                    const Text(
+                      "Cetak Laporan Kategori"
+                    ),
+
+
+                    style:
+                    ElevatedButton.styleFrom(
+
+                      backgroundColor:
+                      Colors.orangeAccent,
+
+
+                      foregroundColor:
+                      Colors.white,
+
+
+                      shape:
+                      RoundedRectangleBorder(
+
+                        borderRadius:
+                        BorderRadius.circular(12)
+
+                      ),
+
+                    ),
+
                   ),
+
                 ),
 
-                const SizedBox(width: 10),
+                const SizedBox(
+                  height: 10
+                ),
+                
+                 Row(
 
-                GestureDetector(
-                  onTap: () async{
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddMenuPage(),
+                  children: [
+
+
+                    Expanded(
+
+                      child: TextField(
+
+                        controller:
+                        searchController,
+
+
+                        onChanged:
+                        searchMenu,
+
+
+                        decoration:
+                        InputDecoration(
+
+                          hintText:
+                          "Cari menu...",
+
+
+                          prefixIcon:
+                          const Icon(
+                            Icons.search
+                          ),
+
+
+                          filled:
+                          true,
+
+
+                          fillColor:
+                          Colors.white,
+
+
+                          border:
+                          OutlineInputBorder(
+
+                            borderRadius:
+                            BorderRadius.circular(12),
+
+
+                            borderSide:
+                            BorderSide.none,
+
+                          ),
+
+                        ),
+
                       ),
-                    );
-                    if (result == true) {
-                      getMenu();
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orangeAccent,
-                      borderRadius: BorderRadius.circular(12),
+
                     ),
-                    child: const Icon(Icons.add, color: Colors.white),
-                  ),
-                )
+
+
+
+                    const SizedBox(
+                      width: 10
+                    ),
+
+
+
+                    GestureDetector(
+
+                      onTap: () async {
+
+
+                        final result =
+                        await Navigator.push(
+
+                          context,
+
+                          MaterialPageRoute(
+
+                            builder: (_) =>
+                            AddMenuPage(),
+
+                          ),
+
+                        );
+
+
+                        if(result == true){
+
+                          getMenu();
+
+                        }
+
+
+                      },
+
+
+                      child: Container(
+
+                        padding:
+                        const EdgeInsets.all(12),
+
+
+                        decoration:
+                        BoxDecoration(
+
+                          color:
+                          Colors.orangeAccent,
+
+
+                          borderRadius:
+                          BorderRadius.circular(12),
+
+                        ),
+
+
+                        child:
+                        const Icon(
+
+                          Icons.add,
+
+                          color:
+                          Colors.white,
+
+                        ),
+
+                      ),
+
+                    )
+
+                  ],
+
+                ),
               ],
             ),
           ),
@@ -477,5 +909,82 @@ class MenuPageState extends State<MenuPage> {
         ),
       ),
     );
+  }
+
+  Widget filterLaporan(){
+
+    return Column(
+
+      children: [
+        Row(
+
+          children:[
+
+
+            Expanded(
+
+              child:ElevatedButton(
+
+                onPressed:(){
+
+                  pilihTanggal(true);
+
+                },
+
+                child:Text(
+
+                  tanggalMulai==null
+
+                  ?"Tanggal Mulai"
+
+                  :"${tanggalMulai!.day}-${tanggalMulai!.month}-${tanggalMulai!.year}"
+
+                ),
+
+              ),
+
+            ),
+
+
+
+            const SizedBox(width:10),
+
+
+
+            Expanded(
+
+              child:ElevatedButton(
+
+                onPressed:(){
+
+                  pilihTanggal(false);
+
+                },
+
+
+                child:Text(
+
+                  tanggalSelesai==null
+
+                  ?"Tanggal Selesai"
+
+                  :"${tanggalSelesai!.day}-${tanggalSelesai!.month}-${tanggalSelesai!.year}"
+
+                ),
+
+              ),
+
+            )
+
+
+          ],
+
+        )
+
+
+      ],
+
+    );
+
   }
 }

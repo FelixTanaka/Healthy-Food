@@ -5,8 +5,13 @@ class FoodRekomendasi extends StatelessWidget {
   final String seller;
   final String price;
   final double rating;
+  final int totalRating;
   final String image;
+  final String sellerImage;
+  final String kategori;
   final VoidCallback onTap;
+  final int makananId;
+  final VoidCallback onAdd;
 
   const FoodRekomendasi({
     super.key,
@@ -14,8 +19,13 @@ class FoodRekomendasi extends StatelessWidget {
     required this.seller,
     required this.price,
     required this.rating,
+    required this.totalRating,
     required this.image,
+    required this.sellerImage,
+    required this.kategori,
     required this.onTap,
+    required this.makananId,
+    required this.onAdd,
   });
 
   @override
@@ -48,7 +58,7 @@ class FoodRekomendasi extends StatelessWidget {
                       top: Radius.circular(16),
                     ),
                     image: DecorationImage(
-                      image: AssetImage(image),
+                      image: NetworkImage(image),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -66,12 +76,12 @@ class FoodRekomendasi extends StatelessWidget {
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
-                      "Healthy",
-                      style: TextStyle(
+                    child: Text(
+                      kategori,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -86,6 +96,7 @@ class FoodRekomendasi extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+
                   Text(
                     name,
                     maxLines: 1,
@@ -95,25 +106,46 @@ class FoodRekomendasi extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
 
-                  Text(
-                    seller,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundImage: NetworkImage(sellerImage),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          seller,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 6),
 
                   Row(
                     children: [
-                      const Icon(Icons.star, size: 14, color: Colors.orangeAccent),
+                      const Icon(Icons.star,
+                          size: 14, color: Colors.orangeAccent),
                       const SizedBox(width: 2),
                       Text(
                         rating.toString(),
                         style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "($totalRating)",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -135,9 +167,12 @@ class FoodRekomendasi extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Icon(
-                    Icons.add_circle,
-                    color: Colors.orange,
+                  GestureDetector(
+                    onTap: onAdd,
+                    child: const Icon(
+                      Icons.add_circle,
+                      color: Colors.orange,
+                    ),
                   ),
                 ],
               ),

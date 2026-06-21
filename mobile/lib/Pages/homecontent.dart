@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
@@ -32,6 +33,9 @@ class HomeContentState extends State<HomeContent> {
   double proteinPercent = 0;
   double karboPercent = 0;
   double lemakPercent = 0;
+  List kategoriList = [];
+  List makananPopuler = [];
+  List makananRekomendasi = [];
 
   @override
   void initState() {
@@ -42,6 +46,9 @@ class HomeContentState extends State<HomeContent> {
   Future<void> loadData() async {
     await getHealthProfile();
     await getNutrisiHarian();
+    await getKategori();
+    await getMakananPopuler();
+    await getRekomendasi();
   }
 
   Future<void> getHealthProfile() async {
@@ -148,6 +155,115 @@ class HomeContentState extends State<HomeContent> {
     } catch (e) {
 
       debugPrint(e.toString());
+    }
+  }
+
+  Future<void> getKategori() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/api/kategori"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      debugPrint(response.statusCode.toString());
+      debugPrint(response.body);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          kategoriList = data['data'];
+        });
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> getMakananPopuler() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/api/menu-populer"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          makananPopuler = data['data'];
+        });
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> getRekomendasi() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/api/rekomendasi"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          makananRekomendasi = data['data'];
+        });
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> tambahKeranjang(int makananId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/api/keranjang/tambah"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: {
+          "makanan_id": makananId.toString(),
+          "jumlah": "1",
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        Fluttertoast.showToast(msg: data["message"]);
+      } else {
+        Fluttertoast.showToast(msg: "Gagal tambah keranjang");
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
     }
   }
 
@@ -322,28 +438,16 @@ class HomeContentState extends State<HomeContent> {
         const SizedBox(height: 10),
 
         SizedBox(
-          height: 100,
-          child: ListView(
+          height: 90,
+          child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: const [
-              CategoryItem(
-                title: "Diet",
-                image: "assets/images/ayam.jpg",
-              ),
-              CategoryItem(
-                title: "Low Sugar",
-                image: "assets/images/sugar.jpg",
-              ),
-              CategoryItem(
-                title: "Protein",
-                image: "assets/images/protein.jpg",
-              ),
-              CategoryItem(
-                title: "Vegan",
-                image: "assets/images/vegan.jpg",
-              ),
-            ],
+            itemCount: kategoriList.length,
+            itemBuilder: (context, index) {
+              return CategoryItem(
+                title: kategoriList[index]['nama_kategori'],
+              );
+            },
           ),
         ),
 
@@ -383,90 +487,44 @@ class HomeContentState extends State<HomeContent> {
 
         const SizedBox(height: 5),
 
-        SizedBox(
-          height: 240,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              FoodRekomendasi(
-                name: "Salad Sehat",
-                seller: "Healthy Kitchen",
-                price: "Rp 25.000",
-                rating: 4.8,
-                image: "assets/images/ayam.jpg",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DetailMenuPage(
-                        food: {
-                          "name": "Nasi Ayam Bakar",
-                          "seller": "Warung Sehat",
-                          "price": "Rp 20.000",
-                          "rating": 4.9,
-                          "image": "assets/images/ayam.jpg",
-                          "category": "Healthy",
-                          "description": "Ayam bakar sehat rendah minyak, enak lezat, cocok untuk diet",
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-              FoodRekomendasi(
-                name: "Chicken Diet",
-                seller: "Fit Food",
-                price: "Rp 30.000",
-                rating: 4.7,
-                image: "assets/images/chicken.jpg",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DetailMenuPage(
-                        food: {
-                          "name": "Nasi Ayam Bakar",
-                          "seller": "Warung Sehat",
-                          "price": "Rp 20.000",
-                          "rating": 4.9,
-                          "image": "assets/images/ayam.jpg",
-                          "category": "Healthy",
-                          "description": "Ayam bakar sehat rendah minyak, enak lezat, cocok untuk diet",
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-              FoodRekomendasi(
-                name: "Vegan Bowl",
-                seller: "Green Eat",
-                price: "Rp 28.000",
-                rating: 4.9,
-                image: "assets/images/vegan.jpg",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DetailMenuPage(
-                        food: {
-                          "name": "Nasi Ayam Bakar",
-                          "seller": "Warung Sehat",
-                          "price": "Rp 20.000",
-                          "rating": 4.9,
-                          "image": "assets/images/ayam.jpg",
-                          "category": "Healthy",
-                          "description": "Ayam bakar sehat rendah minyak, enak lezat, cocok untuk diet",
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+       SizedBox(
+        height: 240,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: makananRekomendasi.length,
+          itemBuilder: (context, index) {
+            final item = makananRekomendasi[index];
+
+            return FoodRekomendasi(
+              name: item['nama_makanan'],
+              seller: item['seller']['nama_toko'],
+              price: "Rp ${item['harga']}",
+              rating: item['ratings_avg_nilai'] == null
+                  ? 0
+                  : double.parse(item['ratings_avg_nilai'].toString()),
+              totalRating: item['ratings_count'] ?? 0,
+              image: "${ApiService.baseUrl}/storage/${item['gambar_makanan']}",
+              sellerImage: "${ApiService.baseUrl}/storage/${item['seller']['foto_toko']}",
+              kategori: item['kategori']['nama_kategori'],
+              makananId: item['id'],
+              onTap: () {
+               Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailMenuPage(
+                    food: item,
+                  ),
+                ),
+              );
+              },
+              onAdd: () {
+                tambahKeranjang(item['id']);
+              },
+            );
+          },
         ),
+      ),
 
         const SizedBox(height: 10),
 
@@ -504,62 +562,45 @@ class HomeContentState extends State<HomeContent> {
 
         const SizedBox(height: 5),
 
-        ListView(
+        ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          children: [
-            FoodPopulerCard(
-              name: "Nasi Ayam Bakar",
-              seller: "Warung Sehat",
-              price: "Rp 20.000",
-              rating: 4.9,
-              image: "assets/images/ayam.jpg",
+          itemCount: makananPopuler.length,
+          itemBuilder: (context, index) {
+
+            final item = makananPopuler[index];
+
+            return FoodPopulerCard(
+              name: item['nama_makanan'],
+              seller: item['seller']['nama_toko'],
+              price: "Rp ${item['harga']}",
+              rating: item['ratings_avg_nilai'] == null
+                  ? 0
+                  : double.parse(
+                      item['ratings_avg_nilai'].toString(),
+                    ),
+              image:
+                  "${ApiService.baseUrl}/storage/${item['gambar_makanan']}",
+              kategori: item['kategori']['nama_kategori'],
+              totalRating: item['ratings_count'] ?? 0,
+              profileImage: "${ApiService.baseUrl}/storage/${item['seller']['foto_toko']}",
+              makananId: item['id'],
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => DetailMenuPage(
-                      food: {
-                        "name": "Nasi Ayam Bakar",
-                        "seller": "Warung Sehat",
-                        "price": "Rp 20.000",
-                        "rating": 4.9,
-                        "image": "assets/images/ayam.jpg",
-                        "category": "Healthy",
-                        "description": "Ayam bakar sehat rendah minyak, enak lezat, cocok untuk diet",
-                      },
+                      food: item,
                     ),
                   ),
                 );
               },
-            ),
-            FoodPopulerCard(
-              name: "Nasi Ayam Bakar",
-              seller: "Warung Sehat",
-              price: "Rp 20.000",
-              rating: 4.9,
-              image: "assets/images/ayam.jpg",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DetailMenuPage(
-                      food: {
-                        "name": "Nasi Ayam Bakar",
-                        "seller": "Warung Sehat",
-                        "price": "Rp 20.000",
-                        "rating": 4.9,
-                        "image": "assets/images/ayam.jpg",
-                        "category": "Healthy",
-                        "description": "Ayam bakar sehat rendah minyak, enak lezat, cocok untuk diet",
-                      },
-                    ),
-                  ),
-                );
+              onAdd: () {
+                tambahKeranjang(item['id']);
               },
-            ),
-          ],
+            );
+          },
         ),
       ],
     );
