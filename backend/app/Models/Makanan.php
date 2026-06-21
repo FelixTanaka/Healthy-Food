@@ -43,4 +43,9 @@ class Makanan extends Model
             'id'
         );
     }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'makanan_id', 'id');
+    }
 }

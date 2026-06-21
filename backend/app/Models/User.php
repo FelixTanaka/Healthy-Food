@@ -28,4 +28,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function healthProfile()
+    {
+        return $this->hasOne(HealthProfile::class);
+    }
 }

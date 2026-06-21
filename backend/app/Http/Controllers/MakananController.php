@@ -367,4 +367,76 @@ class MakananController extends Controller
             'data' => $makanan
         ]);
     }
+
+    public function menuPopuler()
+    {
+        $makanan = Makanan::with([
+                'kategori',
+                'seller.user',
+                'ratings.user'
+            ])
+            ->withAvg(
+                'ratings',
+                'nilai'
+            )
+            ->withCount(
+                'ratings'
+            )
+            ->where(
+                'status',
+                'dikonfirmasi'
+            )
+            ->orderByDesc(
+                'ratings_avg_nilai'
+            )
+            ->orderByDesc(
+                'ratings_count'
+            )
+            ->take(5)
+            ->get();
+
+        return response()->json([
+            'message' => 'Makanan populer berhasil diambil',
+            'data' => $makanan,
+        ]);
+    }
+
+    public function rekomendasi(Request $request)
+    {
+        $user = auth()->user();
+
+        $goal = $user->healthProfile->goal;
+
+        $query = Makanan::with(['kategori', 'seller', 'ratings.user'])
+            ->withAvg('ratings', 'nilai')
+            ->withCount('ratings');
+
+        if ($goal === 'vegetarian') {
+            $query->whereHas('kategori', function ($q) {
+                $q->where('nama_kategori', 'vegetarian');
+            });
+        }
+
+        elseif ($goal === 'lose_weight') {
+            $query->where('kalori', '<=', 500)
+            ->where('protein', '>=', 15);
+        }
+
+        elseif ($goal === 'gain_weight') {
+            $query->where('kalori', '>=', 600)
+                ->where('protein', '>=', 20);
+        }
+
+        if ($goal === 'normal') {
+            $query->orderByDesc('ratings_avg_nilai');
+        }
+
+        $data = $query->inRandomOrder()->limit(5)->get();
+
+        return response()->json([
+            'message' => 'Rekomendasi berhasil diambil',
+            'goal' => $goal,
+            'data' => $data
+        ]);
+    }
 }

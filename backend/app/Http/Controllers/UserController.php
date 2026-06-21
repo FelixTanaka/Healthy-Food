@@ -40,11 +40,12 @@ class UserController extends Controller
             'berat' => 0,
             'tinggi' => 0,
             'umur' => 0,
-            'jenis_kelamin' => '',
+            'jenis_kelamin' => null,
             'kalori' => 0,
             'protein' => 0,
             'lemak' => 0,
             'karbo' => 0,
+            'goal' => 'normal',
         ]);
 
         return response()->json([
@@ -170,5 +171,122 @@ class UserController extends Controller
         return response()->json([
             'message' => 'Logout berhasil'
         ]);
+    }
+
+    public function index()
+    {
+        $users = User::with('role')->orderBy('id', 'desc')->get();
+
+        return response()->json([
+            'message' => 'Data user berhasil diambil',
+            'data' => $users
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'username' => 'required',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'no_telp' => 'required',
+            'role' => 'required|in:pembeli,seller'
+        ]);
+
+        $role = Role::where('nama_role', $request->role)->first();
+
+        if (!$role) {
+            return response()->json([
+                'message' => 'Role tidak ditemukan'
+            ], 404);
+        }
+
+        $user = User::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'no_telp' => $request->no_telp,
+            'password' => Hash::make($request->password),
+            'role_id' => $role->id
+        ]);
+
+        if ($request->role === 'pembeli') {
+            HealthProfile::create([
+                'user_id' => $user->id,
+                'berat' => 0,
+                'tinggi' => 0,
+                'umur' => 0,
+                'jenis_kelamin' => null,
+                'kalori' => 0,
+                'protein' => 0,
+                'lemak' => 0,
+                'karbo' => 0,
+                'goal' => 'normal',
+            ]);
+        }
+
+        return response()->json([
+            'message' => ucfirst($request->role) . ' berhasil ditambahkan',
+            'data' => $user
+        ], 201);
+    }
+
+    public function destroy($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        HealthProfile::where('user_id', $user->id)->delete();
+
+        $user->delete();
+
+        return response()->json([
+            'message' => 'User berhasil dihapus'
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        $request->validate([
+            'username' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'no_telp' => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        if ($request->filled('username')) {
+            $user->username = $request->username;
+        }
+
+        if ($request->filled('email')) {
+            $user->email = $request->email;
+        }
+
+        if ($request->filled('no_telp')) {
+            $user->no_telp = $request->no_telp;
+        }
+
+        if ($request->filled('password')) {
+            $user->password = bcrypt($request->password);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'User berhasil diupdate',
+            'data' => $user
+        ], 200);
     }
 }

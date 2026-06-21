@@ -30,6 +30,7 @@ class HealthProfileController extends Controller
             'tinggi' => 'nullable|numeric',
             'umur' => 'nullable|numeric',
             'jenis_kelamin' => 'nullable|in:male,female',
+            'goal' => 'nullable|in:normal,gain_weight,lose_weight,vegetarian',
         ]);
 
         $health = HealthProfile::where('user_id', auth()->id())->first();
@@ -48,6 +49,10 @@ class HealthProfileController extends Controller
 
         if ($request->filled('jenis_kelamin')) {
             $health->jenis_kelamin = $request->jenis_kelamin;
+        }
+
+        if ($request->filled('goal')) {
+            $health->goal = $request->goal;
         }
 
         $berat = $health->berat;
@@ -74,6 +79,7 @@ class HealthProfileController extends Controller
             'tinggi' => $tinggi,
             'umur' => $umur,
             'jenis_kelamin' => $gender,
+            'goal' => $health->goal,
 
             'kalori' => round($kalori),
             'protein' => round($protein, 2),
