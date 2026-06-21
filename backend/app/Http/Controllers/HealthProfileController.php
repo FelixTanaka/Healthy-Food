@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\HealthProfile;
+use Illuminate\Support\Facades\Auth;
 
 class HealthProfileController extends Controller
 {
@@ -90,6 +91,25 @@ class HealthProfileController extends Controller
         return response()->json([
             'message' => 'Health profile berhasil diupdate',
             'data' => $health
+        ]);
+    }
+
+    public function getBeratUser(Request $request)
+    {
+        $user = Auth::user();
+
+        $health = HealthProfile::where('user_id', $user->id)->first();
+
+        if (!$health) {
+            return response()->json([
+                'message' => 'Data health profile tidak ditemukan',
+                'berat' => null
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Berat user berhasil diambil',
+            'berat' => $health->berat
         ]);
     }
 }
