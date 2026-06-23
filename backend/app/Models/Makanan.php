@@ -15,7 +15,6 @@ class Makanan extends Model
         'seller_id',
         'nama_makanan',
         'gambar_makanan',
-        'status',
         'deskripsi',
         'bahan',
         'harga',

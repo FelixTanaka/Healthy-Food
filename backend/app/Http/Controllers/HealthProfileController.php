@@ -36,6 +36,24 @@ class HealthProfileController extends Controller
 
         $health = HealthProfile::where('user_id', auth()->id())->first();
 
+        if ($request->filled('berat') && $request->berat <= 0) {
+            return response()->json([
+                'message' => 'Berat badan tidak boleh kurang dari atau sama dengan 0'
+            ], 422);
+        }
+
+        if ($request->filled('tinggi') && $request->tinggi <= 0) {
+            return response()->json([
+                'message' => 'Tinggi badan tidak boleh kurang dari atau sama dengan 0'
+            ], 422);
+        }
+
+        if ($request->filled('umur') && $request->umur <= 0) {
+            return response()->json([
+                'message' => 'Umur tidak boleh kurang dari atau sama dengan 0'
+            ], 422);
+        }
+
         if ($request->filled('berat')) {
             $health->berat = $request->berat;
         }
@@ -89,7 +107,7 @@ class HealthProfileController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Health profile berhasil diupdate',
+            'message' => 'Health profile berhasil disimpan',
             'data' => $health
         ]);
     }
