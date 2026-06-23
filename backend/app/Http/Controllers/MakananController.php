@@ -27,16 +27,50 @@ class MakananController extends Controller
 
         $gambar->storeAs('makanan', $namaGambar, 'public');
 
-        $translator = new GoogleTranslate('en');
+        $bahan = json_decode(
+            $request->bahan,
+            true
+        );
 
-        $bahanInggris = $translator->translate(
-            $request->bahan
+        $ingredientList = [];
+
+        foreach ($bahan as $item) {
+
+            if (
+                empty($item['nama_inggris'])||
+                empty($item['unit']) ||
+                empty($item['amount'])
+            ) {
+
+                return response()->json([
+                    'message' => 'Semua bahan harus diisi',
+                ], 422);
+
+            }
+
+            if ($item['amount'] <= 0) {
+
+                return response()->json([
+                    'message' => 'Jumlah bahan harus lebih dari 0',
+                ], 422);
+
+            }
+
+            $ingredientList[] =
+                $item['amount'] . ' ' .
+                $item['unit'] . ' ' .
+                $item['nama_inggris'];
+        }
+
+        $ingredientText = implode(
+            "\n",
+            $ingredientList
         );
 
         $response = Http::asForm()->post(
             'https://api.spoonacular.com/recipes/parseIngredients?includeNutrition=true&apiKey=' . env('SPOONACULAR_API_KEY'),
             [
-                'ingredientList' => $bahanInggris,
+                'ingredientList' => $ingredientText,
 
                 'servings' => 1,
             ]
@@ -85,8 +119,6 @@ class MakananController extends Controller
 
             'gambar_makanan' => 'makanan/' . $namaGambar,
 
-            'status' => 'pending',
-
             'deskripsi' => $request->deskripsi,
 
             'harga' => $request->harga,
@@ -123,14 +155,6 @@ class MakananController extends Controller
                 'ratings'
             )
             ->where('seller_id', $seller->id)
-            ->orderByRaw("
-                CASE
-                    WHEN status = 'dikonfirmasi' THEN 1
-                    WHEN status = 'pending' THEN 2
-                    WHEN status = 'dibatalkan' THEN 3
-                    ELSE 4
-                END
-            ")
             ->get();
 
         return response()->json([
@@ -168,16 +192,51 @@ class MakananController extends Controller
         $karbohidrat = $makanan->karbohidrat;
 
         if ($request->filled('bahan')) {
-            $translator = new GoogleTranslate('en');
 
-            $bahanInggris = $translator->translate(
-                $request->bahan
+            $bahan = json_decode(
+                $request->bahan,
+                true
+            );
+
+            $ingredientList = [];
+
+            foreach ($bahan as $item) {
+
+                if (
+                    empty($item['nama_inggris']) ||
+                    empty($item['unit']) ||
+                    empty($item['amount'])
+                ) {
+
+                    return response()->json([
+                        'message' => 'Semua bahan harus diisi'
+                    ], 422);
+
+                }
+
+                if ($item['amount'] <= 0) {
+
+                    return response()->json([
+                        'message' => 'Jumlah bahan harus lebih dari 0'
+                    ], 422);
+
+                }
+
+                $ingredientList[] =
+                    $item['amount'] . ' ' .
+                    $item['unit'] . ' ' .
+                    $item['nama_inggris'];
+            }
+
+            $ingredientText = implode(
+                "\n",
+                $ingredientList
             );
 
             $response = Http::asForm()->post(
                 'https://api.spoonacular.com/recipes/parseIngredients?includeNutrition=true&apiKey=' . env('SPOONACULAR_API_KEY'),
                 [
-                    'ingredientList' => $bahanInggris,
+                    'ingredientList' => $ingredientText,
                     'servings' => 1,
                 ]
             );
@@ -235,7 +294,31 @@ class MakananController extends Controller
         }
 
         if ($request->filled('bahan')) {
-            $makanan->bahan = $request->bahan;
+
+            $bahanSimpan = [];
+
+            foreach ($bahan as $item) {
+
+                $bahanSimpan[] = [
+                    'nama_indonesia' =>
+                        $item['nama_indonesia'],
+
+                    'nama_inggris' =>
+                        $item['nama_inggris'],
+
+                    'spoonacular_id' =>
+                        $item['spoonacular_id'],
+
+                    'amount' =>
+                        $item['amount'],
+
+                    'unit' =>
+                        $item['unit'],
+                ];
+            }
+
+            $makanan->bahan =
+                json_encode($bahanSimpan);
         }
 
         if ($request->filled('deskripsi')) {
@@ -291,44 +374,6 @@ class MakananController extends Controller
         ]);
     }
 
-    public function approve($id)
-    {
-        $makanan = Makanan::find($id);
-
-        if (!$makanan) {
-            return response()->json([
-                'message' => 'Makanan tidak ditemukan'
-            ], 404);
-        }
-
-        $makanan->status = 'dikonfirmasi';
-
-        $makanan->save();
-
-        return response()->json([
-            'message' => 'Makanan berhasil dikonfirmasi'
-        ]);
-    }
-
-    public function reject($id)
-    {
-        $makanan = Makanan::find($id);
-
-        if (!$makanan) {
-            return response()->json([
-                'message' => 'Makanan tidak ditemukan'
-            ], 404);
-        }
-
-        $makanan->status = 'ditolak';
-
-        $makanan->save();
-
-        return response()->json([
-            'message' => 'Makanan berhasil ditolak'
-        ]);
-    }
-
     public function deleteMakananAdmin($id)
     {
         $makanan = Makanan::find($id);
@@ -354,7 +399,6 @@ class MakananController extends Controller
             'nilai',
         )
         ->withCount('ratings')
-            ->where('status', 'dikonfirmasi')
             ->orderByDesc('ratings_avg_nilai')
 
             ->orderByDesc(
@@ -381,10 +425,6 @@ class MakananController extends Controller
             )
             ->withCount(
                 'ratings'
-            )
-            ->where(
-                'status',
-                'dikonfirmasi'
             )
             ->orderByDesc(
                 'ratings_avg_nilai'
@@ -415,28 +455,115 @@ class MakananController extends Controller
             $query->whereHas('kategori', function ($q) {
                 $q->where('nama_kategori', 'vegetarian');
             });
+
+            $data = $query->inRandomOrder()->limit(5)->get();
         }
 
         elseif ($goal === 'lose_weight') {
-            $query->where('kalori', '<=', 500)
-            ->where('protein', '>=', 15);
+
+            $foods = $query
+                ->orderBy('kalori', 'asc')
+                ->limit(20)
+                ->get();
+
+            $data = $foods->random(min(5, $foods->count()));
         }
 
         elseif ($goal === 'gain_weight') {
-            $query->where('kalori', '>=', 600)
-                ->where('protein', '>=', 20);
+
+            $foods = $query
+                ->orderByDesc('kalori')
+                ->orderByDesc('protein')
+                ->limit(20)
+                ->get();
+
+            $data = $foods->random(min(5, $foods->count()));
         }
 
-        if ($goal === 'normal') {
-            $query->orderByDesc('ratings_avg_nilai');
-        }
+        else {
 
-        $data = $query->inRandomOrder()->limit(5)->get();
+            $foods = $query
+                ->orderByDesc('ratings_avg_nilai')
+                ->limit(20)
+                ->get();
+
+            $data = $foods->random(min(5, $foods->count()));
+        }
 
         return response()->json([
             'message' => 'Rekomendasi berhasil diambil',
             'goal' => $goal,
             'data' => $data
+        ]);
+    }
+
+    public function cariBahan(Request $request)
+    {
+        $request->validate([
+            'query' => 'required'
+        ]);
+
+        $translator = new GoogleTranslate('en');
+
+        $keywordInggris = $translator->translate(
+            $request->query
+        );
+
+        $response = Http::get(
+            'https://api.spoonacular.com/food/ingredients/search',
+            [
+                'query' => $keywordInggris,
+                'number' => 10,
+                'apiKey' => env('SPOONACULAR_API_KEY')
+            ]
+        );
+
+        return response()->json(
+            $response->json()
+        );
+    }
+
+    public function searchIngredients(Request $request)
+    {
+        $keyword = strtolower($request->q);
+
+        $ingredients = json_decode(
+            file_get_contents(
+                storage_path('app/public/ingredients_id.json')
+            ),
+            true
+        );
+
+        $result = collect($ingredients)
+            ->filter(function ($item) use ($keyword) {
+
+                return str_contains(
+                    strtolower($item['nama_indonesia']),
+                    $keyword
+                );
+
+            })
+            ->take(20)
+            ->values();
+
+        return response()->json([
+            'data' => $result
+        ]);
+    }
+
+    public function units($id)
+    {
+        $response = Http::get(
+            "https://api.spoonacular.com/food/ingredients/$id/information",
+            [
+                'apiKey' => env('SPOONACULAR_API_KEY'),
+                'amount' => 1,
+            ]
+        );
+
+        return response()->json([
+            'data' =>
+                $response->json()['possibleUnits']
         ]);
     }
 }

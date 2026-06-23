@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile/Pages/healthprofilepage.dart';
 
 class LoginPage extends StatefulWidget {
     const LoginPage({super.key});
@@ -20,6 +21,26 @@ class LoginPageState extends State<LoginPage> {
     final TextEditingController passwordController = TextEditingController();
 
     bool isPasswordHidden = true;
+
+    Future<Map<String, dynamic>?> getHealthProfile(String token) async {
+      try {
+        final response = await http.get(
+          Uri.parse("${ApiService.baseUrl}/api/health-profile"),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Accept": "application/json",
+          },
+        );
+
+        if (response.statusCode == 200) {
+          return jsonDecode(response.body);
+        }
+
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
 
     Future<void> login() async {
       try {
@@ -54,14 +75,38 @@ class LoginPageState extends State<LoginPage> {
           );
 
           if (role == "pembeli") {
-            if (!mounted) return;
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const PembeliHomePage(),
-              ),
-            );
 
+            final healthData = await getHealthProfile(data['token']);
+
+            bool profileBelumLengkap = true;
+
+            if (healthData != null) {
+              final profile = healthData['data'];
+
+              profileBelumLengkap =
+                  (profile['berat'] ?? 0) == 0 ||
+                  (profile['tinggi'] ?? 0) == 0 ||
+                  (profile['umur'] ?? 0) == 0 ||
+                  profile['jenis_kelamin'] == null;
+            }
+
+            if (!mounted) return;
+
+            if (profileBelumLengkap) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HealthProfilePage(),
+                ),
+              );
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PembeliHomePage(),
+                ),
+              );
+            }
           } else if (role == "seller") {
             if (!mounted) return;
             Navigator.pushReplacement(

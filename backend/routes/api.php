@@ -75,6 +75,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/rating/{id}', [RatingController::class, 'destroy']);
 
     Route::get('/berat-user', [HealthProfileController::class, 'getBeratUser']);
+
+    Route::get('/bahan/search', [MakananController::class, 'cariBahan']);
+
+    Route::get('/ingredients/search', [MakananController::class, 'searchIngredients']);
+
+    Route::get('/ingredients/{id}/units', [MakananController::class, 'units']);
 });
 
 Route::post('/xendit-callback', [TransaksiController::class, 'xenditCallback']);
@@ -111,10 +117,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/kategori', [KategoriController::class, 'index']);
 
     Route::get('/semua-makanan', [MakananController::class, 'semuaMakanan']);
-
-    Route::put('/makanan/{id}/approve', [MakananController::class, 'approve']);
-
-    Route::put('/makanan/{id}/reject', [MakananController::class, 'reject']);
 
     Route::delete('/admin/makanan/{id}', [MakananController::class, 'deleteMakananAdmin']);
 

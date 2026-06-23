@@ -32,50 +32,6 @@ export default function Makanan() {
         fetchData();
     }, []);
 
-    const approveMakanan = async (id) => {
-        try {
-
-            await axios.put(
-                `http://127.0.0.1:8000/api/makanan/${id}/approve`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                }
-            );
-
-            fetchData();
-
-            toast.success("Makanan berhasil dikonfirmasi");
-
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const rejectMakanan = async (id) => {
-        try {
-
-            await axios.put(
-                `http://127.0.0.1:8000/api/makanan/${id}/reject`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                }
-            );
-
-            fetchData();
-
-            toast.error("Makanan berhasil ditolak");
-
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
     const deleteMakanan = async (id) => {
         try {
 
@@ -101,8 +57,6 @@ export default function Makanan() {
 
     const filteredMakanan = makanan.filter((item) =>
         item.nama_makanan.toLowerCase().includes(search.toLowerCase()) ||
-
-        item.status.toLowerCase().includes(search.toLowerCase()) ||
 
         item.kategori.nama_kategori.toLowerCase().includes(search.toLowerCase()) ||
 
@@ -165,7 +119,6 @@ export default function Makanan() {
                             <th className="p-3 text-center">Karbo</th>
                             <th className="p-3 text-center">Lemak</th>
                             <th className="p-3 text-center">Kalori</th>
-                            <th className="p-3 text-center">Status</th>
                             <th className="p-3 text-center">Aksi</th>
                         </tr>
                         </thead>
@@ -213,53 +166,24 @@ export default function Makanan() {
                                         {item.kalori} kcal
                                     </td>
 
-                                    <td className="p-3 text-center">
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                item.status === "dikonfirmasi"
-                                                    ? "bg-green-100 text-green-600"
-                                                    : item.status === "pending"
-                                                    ? "bg-orange-100 text-orange-600"
-                                                    : "bg-red-100 text-red-600"
-                                            }`}
-                                        >
-                                            {item.status}
-                                        </span>
-                                    </td>
-
                                     <td className="p-3">
-                                        <div className="flex justify-center gap-2">
+                                        <div className="flex justify-center items-center gap-2">
+                                            <button
+                                                className="px-3 py-1 text-xs bg-blue-500 text-white rounded"
+                                                onClick={() => {
+                                                    setShowModal(true);
+                                                    setSelectedMakanan(item);
+                                                }}
+                                            >
+                                                Detail
+                                            </button>
 
-                                            {item.status === "pending" ? (
-                                                <>
-                                                    <button className="w-8 h-8 rounded-full bg-green-500 text-white" onClick={() => approveMakanan(item.id)}>
-                                                        ✓
-                                                    </button>
-
-                                                    <button className="w-8 h-8 rounded-full bg-red-500 text-white" onClick={() => rejectMakanan(item.id)}>
-                                                        ✕
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button
-                                                        className="px-3 py-1 text-xs bg-blue-500 text-white rounded"
-                                                        onClick={() => {
-                                                            setShowModal(true);
-                                                            setSelectedMakanan(item);
-                                                        }}
-                                                    >
-                                                        Detail
-                                                    </button>
-
-                                                    <button
-                                                        className="px-3 py-1 text-xs bg-red-500 text-white rounded" onClick={()=> deleteMakanan(item.id)}
-                                                    >
-                                                        Hapus
-                                                    </button>
-                                                </>
-                                            )}
-
+                                            <button
+                                                className="px-3 py-1 text-xs bg-red-500 text-white rounded"
+                                                onClick={() => deleteMakanan(item.id)}
+                                            >
+                                                Hapus
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
