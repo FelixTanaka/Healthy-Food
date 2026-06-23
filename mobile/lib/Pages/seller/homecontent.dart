@@ -274,11 +274,6 @@ class MenuPageState extends State<MenuPage> {
                 .toString()
                 .toLowerCase();
 
-        final status =
-            item["status"]
-                .toString()
-                .toLowerCase();
-
         final rating =
 
             item["ratings_avg_nilai"] == null
@@ -299,8 +294,6 @@ class MenuPageState extends State<MenuPage> {
             nama.contains(query) ||
 
             harga.contains(query) ||
-
-            status.contains(query) ||
 
             rating.contains(query);
       }).toList();
@@ -752,12 +745,6 @@ class MenuPageState extends State<MenuPage> {
                                 ),
 
                                 const SizedBox(height: 10),
-
-                                buildStatusMenu(
-                                  item["status"],
-                                ),
-
-                                const SizedBox(height: 8),
 
                                 Row(
                                   children: [
