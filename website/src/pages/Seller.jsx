@@ -151,8 +151,6 @@ export default function Selller() {
                             <th className="p-3 text-left">No Telp</th>
                             <th className="p-3 text-left">Nama Toko</th>
                             <th className="p-3 text-left">Alamat</th>
-                            <th className="p-3 text-center">Jam Buka</th>
-                            <th className="p-3 text-center">Jam Tutup</th>
                             <th className="p-3 text-center">Jumlah Makanan</th>
                             <th className="p-3 text-center">Aksi</th>
                         </tr>
@@ -183,14 +181,6 @@ export default function Selller() {
 
                                     <td className="p-3">
                                         {item.alamat || "-"}
-                                    </td>
-
-                                    <td className="p-3 text-center">
-                                        {item.jam_buka || "-"}
-                                    </td>
-
-                                    <td className="p-3 text-center">
-                                        {item.jam_tutup || "-"}
                                     </td>
 
                                     <td className="p-3 text-center">
