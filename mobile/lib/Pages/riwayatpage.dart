@@ -89,7 +89,8 @@ class RiwayatPageState extends State<RiwayatPage> {
                 "Rp ${(item['subtotal'] * 0.10).toInt()}",
 
               "subtotal":
-                "Rp ${item['subtotal']}",       
+                "Rp ${item['subtotal']}",
+              "ongkir" : "Rp ${(item['ongkir'])}",      
             };
 
           }).toList();
@@ -297,7 +298,7 @@ class RiwayatPageState extends State<RiwayatPage> {
         color = Colors.green;
         break;
 
-      case "pending":
+      case "belumBayar":
         color = Colors.orange;
         break;
 
@@ -346,9 +347,13 @@ class RiwayatPageState extends State<RiwayatPage> {
 
     switch (status) {
 
-      case "diproses":
-        color = Colors.blue;
+      case "menunggu_pembayaran":
+        color = Colors.orange;
         break;
+
+      case "dikirim":
+        color = Colors.deepOrange;
+        break;  
 
       case "selesai":
         color = Colors.green;
@@ -358,9 +363,9 @@ class RiwayatPageState extends State<RiwayatPage> {
         color = Colors.red;
         break;
 
-      case "menunggu_pembayaran":
-        color = Colors.orange;
-        break;
+      case "diproses":
+        color = Colors.blue;
+        break;  
 
       default:
         color = Colors.grey;

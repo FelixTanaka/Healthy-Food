@@ -8,6 +8,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/Pages/healthprofilepage.dart';
+import 'package:mobile/Pages/seller/lengkapiprofiletokopage.dart';
 
 class LoginPage extends StatefulWidget {
     const LoginPage({super.key});
@@ -39,6 +40,35 @@ class LoginPageState extends State<LoginPage> {
         return null;
       } catch (e) {
         return null;
+      }
+    }
+
+    Future<Map<String, dynamic>?> getSellerProfile(
+      String token,
+    ) async {
+
+      try {
+
+        final response = await http.get(
+          Uri.parse(
+            "${ApiService.baseUrl}/api/seller/profile",
+          ),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Accept": "application/json",
+          },
+        );
+
+        if (response.statusCode == 200) {
+          return jsonDecode(response.body);
+        }
+
+        return null;
+
+      } catch (e) {
+
+        return null;
+
       }
     }
 
@@ -108,14 +138,63 @@ class LoginPageState extends State<LoginPage> {
               );
             }
           } else if (role == "seller") {
-            if (!mounted) return;
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SellerHomePage(),
-              ),
-            );
-          }
+
+              final sellerData =
+                  await getSellerProfile(
+                data['token'],
+              );
+
+              bool profileBelumLengkap = true;
+
+              if (sellerData != null &&
+                  sellerData['data'] != null) {
+
+                final seller =
+                    sellerData['data'];
+
+                profileBelumLengkap =
+
+                    (seller['nama_toko'] ?? '')
+                        .toString()
+                        .isEmpty ||
+
+                    (seller['alamat'] ?? '')
+                        .toString()
+                        .isEmpty ||
+
+                    (seller['deskripsi'] ?? '')
+                        .toString()
+                        .isEmpty;
+
+                    seller['latitude'] == null ||
+
+                    seller['longitude'] == null;
+              }
+
+              if (!mounted) return;
+
+              if (profileBelumLengkap) {
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const LengkapiProfileTokoPage(),
+                  ),
+                );
+
+              } else {
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const SellerHomePage(),
+                  ),
+                );
+
+              }
+            }
         } else {
           Fluttertoast.showToast(
             msg: "Login gagal",

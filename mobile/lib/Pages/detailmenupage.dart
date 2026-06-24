@@ -6,52 +6,129 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class DetailMenuPage extends StatelessWidget {
+class DetailMenuPage extends StatefulWidget {
   final Map<String, dynamic> food;
 
-  DetailMenuPage({super.key, required this.food});
+  const DetailMenuPage({
+    super.key,
+    required this.food,
+  });
 
-  Future<void> tambahKeranjang() async {
+  @override
+  State<DetailMenuPage> createState() =>
+      _DetailMenuPageState();
+}
 
+class _DetailMenuPageState extends State<DetailMenuPage> {
+  Future<void> tambahKeranjang({
+    bool forceReplace = false,
+  }) async {
     try {
+      final prefs =
+          await SharedPreferences.getInstance();
 
-      final prefs = await SharedPreferences.getInstance();
-
-      String? token = prefs.getString('token');
+      String? token =
+          prefs.getString('token');
 
       final response = await http.post(
-        Uri.parse("${ApiService.baseUrl}/api/keranjang/tambah"),
-
+        Uri.parse(
+          "${ApiService.baseUrl}/api/keranjang/tambah",
+        ),
         headers: {
           "Accept": "application/json",
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization":
+              "Bearer $token",
         },
-
-         body: jsonEncode({
-
-          "makanan_id": food["id"],
+        body: jsonEncode({
+          "makanan_id":
+              widget.food["id"],
           "jumlah": 1,
-
+          "force_replace":
+              forceReplace,
         }),
       );
 
-      final data = jsonDecode(response.body);
+      final data =
+          jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-
         Fluttertoast.showToast(
           msg: data["message"],
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
         );
+      }
 
-      } else {
+      else if (
+          response.statusCode == 409 &&
+          data["seller_berbeda"] ==
+              true) {
+
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              backgroundColor:
+                  Colors.white,
+
+              title: const Text(
+                "Seller Berbeda",
+              ),
+
+              content: const Text(
+                "Keranjang Anda berisi produk dari toko lain.\n\nHapus keranjang lama dan ganti dengan produk baru?",
+              ),
+
+              actions: [
+
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(
+                      context,
+                    );
+                  },
+                  child: const Text(
+                    "Batal",
+                  ),
+                ),
+
+                ElevatedButton(
+                  style:
+                      ElevatedButton
+                          .styleFrom(
+                    backgroundColor:
+                        Colors.orange,
+                    foregroundColor:
+                        Colors.white,
+                  ),
+                  onPressed: () async {
+
+                    Navigator.pop(
+                      context,
+                    );
+
+                    await tambahKeranjang(
+                      forceReplace:
+                          true,
+                    );
+                  },
+                  child: const Text(
+                    "Hapus & Ganti",
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      }
+
+      else {
 
         Fluttertoast.showToast(
-          msg: "Gagal tambah keranjang",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
+          msg:
+              data["message"] ??
+              "Gagal tambah keranjang",
         );
       }
 
@@ -59,8 +136,6 @@ class DetailMenuPage extends StatelessWidget {
 
       Fluttertoast.showToast(
         msg: e.toString(),
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
       );
     }
   }
@@ -69,15 +144,15 @@ class DetailMenuPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final rating =
     double.parse(
-      (food["ratings_avg_nilai"] ?? 0)
+      (widget.food["ratings_avg_nilai"] ?? 0)
           .toString(),
     );
 
     final totalRating =
-    food["ratings_count"] ?? 0;
+    widget.food["ratings_count"] ?? 0;
     final reviews =
     List<Map<String, dynamic>>.from(
-      food["ratings"] ?? [],
+      widget.food["ratings"] ?? [],
     );
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -88,7 +163,7 @@ class DetailMenuPage extends StatelessWidget {
               Stack(
                 children: [
                   Image.network(
-                    "${ApiService.baseUrl}/storage/${food["gambar_makanan"]}",
+                    "${ApiService.baseUrl}/storage/${widget.food["gambar_makanan"]}",
                     height: 280,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -150,7 +225,7 @@ class DetailMenuPage extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      food["nama_makanan"],
+                                      widget.food["nama_makanan"],
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -158,7 +233,7 @@ class DetailMenuPage extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                     "Rp ${food["harga"]}",
+                                     "Rp ${widget.food["harga"]}",
                                     style: const TextStyle(
                                       fontSize: 20,
                                       color: Colors.orange,
@@ -256,7 +331,7 @@ class DetailMenuPage extends StatelessWidget {
                                     ),
 
                                     child: Text(
-                                      food["kategori"]["nama_kategori"],
+                                      widget.food["kategori"]["nama_kategori"],
 
                                       style: const TextStyle(
                                         color: Colors.orange,
@@ -272,7 +347,7 @@ class DetailMenuPage extends StatelessWidget {
                                     radius: 12,
 
                                     backgroundImage: NetworkImage(
-                                      "${ApiService.baseUrl}/storage/${food["seller"]["foto_toko"]}",
+                                      "${ApiService.baseUrl}/storage/${widget.food["seller"]["foto_toko"]}",
                                     ),
                                   ),
 
@@ -280,7 +355,7 @@ class DetailMenuPage extends StatelessWidget {
 
                                   Expanded(
                                     child: Text(
-                                      food["seller"]["nama_toko"],
+                                      widget.food["seller"]["nama_toko"],
 
                                       overflow: TextOverflow.ellipsis,
 
@@ -332,10 +407,10 @@ class DetailMenuPage extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  buildInfo(Icons.local_fire_department, "Kalori", "${food["kalori"]} kcal", Colors.orange),
-                                  buildInfo(Icons.set_meal, "Protein", "${food["protein"]} g", Colors.blue),
-                                  buildInfo(Icons.water_drop, "Lemak", "${food["lemak"]} g", Colors.red),
-                                  buildInfo(Icons.grain, "Karbo", "${food["karbohidrat"]} g", Colors.green),
+                                  buildInfo(Icons.local_fire_department, "Kalori", "${widget.food["kalori"]} kcal", Colors.orange),
+                                  buildInfo(Icons.set_meal, "Protein", "${widget.food["protein"]} g", Colors.blue),
+                                  buildInfo(Icons.water_drop, "Lemak", "${widget.food["lemak"]} g", Colors.red),
+                                  buildInfo(Icons.grain, "Karbo", "${widget.food["karbohidrat"]} g", Colors.green),
                                 ],
                               ),
                             ],
@@ -375,7 +450,7 @@ class DetailMenuPage extends StatelessWidget {
                               const SizedBox(height: 10),
 
                               Text(
-                                food["deskripsi"],
+                                widget.food["deskripsi"],
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   height: 1.5,
@@ -422,7 +497,7 @@ class DetailMenuPage extends StatelessWidget {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => AllReviewsPage(reviews: List<Map<String, dynamic>>.from(food["ratings"] ?? [],),),
+                                          builder: (_) => AllReviewsPage(reviews: List<Map<String, dynamic>>.from(widget.food["ratings"] ?? [],),),
                                         ),
                                       );
                                     },

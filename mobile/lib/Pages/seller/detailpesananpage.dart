@@ -18,7 +18,6 @@ class DetailPesananPage extends StatefulWidget {
 
 class DetailPesananPageState extends State<DetailPesananPage> {
   Future<void> pesananSelesai() async {
-
     try {
 
       final prefs =
@@ -54,6 +53,38 @@ class DetailPesananPageState extends State<DetailPesananPage> {
       debugPrint(e.toString());
     }
   }
+
+  Future<void> updatePesananDikirim() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
+
+      final response = await http.put(
+        Uri.parse(
+          "${ApiService.baseUrl}/api/seller/pesanan/${widget.data["id"]}/dikirim",
+        ),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        Fluttertoast.showToast(
+          msg: "Pesanan berhasil dikirim 🚚",
+        );
+
+        if (!mounted) return;
+
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -407,6 +438,23 @@ class DetailPesananPageState extends State<DetailPesananPage> {
                   ],
                 ),
 
+                const SizedBox(height: 8),
+
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment
+                          .spaceBetween,
+
+                  children: [
+
+                    const Text("Ongkir"),
+
+                    Text(
+                      "Rp ${data["ongkir"]}",
+                    ),
+                  ],
+                ),
+
                 const Divider(height: 24),
 
                 Row(
@@ -453,29 +501,41 @@ class DetailPesananPageState extends State<DetailPesananPage> {
             child: ElevatedButton(
 
               onPressed: () {
-                pesananSelesai();
+
+                if (data["status_order"] == "diproses") {
+
+                  updatePesananDikirim();
+
+                } else if (
+                    data["status_order"] == "dikirim") {
+
+                  pesananSelesai();
+                }
               },
 
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.orange,
-
-                foregroundColor:
-                    Colors.white,
-
-                padding:
-                    const EdgeInsets.symmetric(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
                   vertical: 14,
                 ),
-
                 shape: RoundedRectangleBorder(
                   borderRadius:
                       BorderRadius.circular(12),
                 ),
               ),
 
-              child: const Text(
-                "Pesanan Selesai",
+              child: Text(
+
+                data["status_order"] == "diproses"
+
+                    ? "Pesanan Dikirim"
+
+                    : data["status_order"] == "dikirim"
+
+                        ? "Pesanan Selesai"
+
+                        : "Pesanan Selesai",
               ),
             ),
           ),
@@ -529,7 +589,7 @@ class DetailPesananPageState extends State<DetailPesananPage> {
         color = Colors.green;
         break;
 
-      case "pending":
+      case "belumBayar":
         color = Colors.orange;
         break;
 
@@ -580,6 +640,10 @@ class DetailPesananPageState extends State<DetailPesananPage> {
       case "menunggu_pembayaran":
         color = Colors.orange;
         break;
+
+      case "dikirim":
+        color = Colors.deepOrange;
+        break;  
 
       case "selesai":
         color = Colors.green;

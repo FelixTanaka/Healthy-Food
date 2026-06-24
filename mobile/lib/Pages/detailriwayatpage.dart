@@ -317,6 +317,23 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                 ],
               ),
 
+               pw.SizedBox(height: 8),
+
+              pw.Row(
+                mainAxisAlignment:
+                    pw.MainAxisAlignment
+                        .spaceBetween,
+
+                children: [
+
+                  pw.Text("Ongkir"),
+
+                  pw.Text(
+                    data["ongkir"],
+                  ),
+                ],
+              ),
+
               pw.Divider(),
 
               pw.Row(
@@ -970,6 +987,24 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                   ],
                 ),
 
+                const SizedBox(height: 8),
+
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment
+                          .spaceBetween,
+
+                  children: [
+
+                    const Text(
+                        "Ongkir"),
+
+                    Text(
+                      data["ongkir"],
+                    ),
+                  ],
+                ),
+
                 const Divider(),
 
                 Row(
@@ -1053,7 +1088,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
         color = Colors.green;
         break;
 
-      case "pending":
+      case "belumBayar":
         color = Colors.orange;
         break;
 
@@ -1102,9 +1137,13 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
     switch (status.toLowerCase()) {
 
-      case "diproses":
-        color = Colors.blue;
+      case "menunggu_pembayaran":
+        color = Colors.orange;
         break;
+
+      case "dikirim":
+        color = Colors.deepOrange;
+        break;  
 
       case "selesai":
         color = Colors.green;
@@ -1114,9 +1153,9 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
         color = Colors.red;
         break;
 
-      case "menunggu_pembayaran":
-        color = Colors.orange;
-        break;
+      case "diproses":
+        color = Colors.blue;
+        break;  
 
       default:
         color = Colors.grey;

@@ -20,7 +20,7 @@ class _HealthProfilePageState extends State<HealthProfilePage> {
   final umurController = TextEditingController();
 
   String? jenisKelamin;
-  String goal = "normal";
+  String? goal;
 
   Future<void> updateHealthProfile() async {
     if (beratController.text.isEmpty ||
