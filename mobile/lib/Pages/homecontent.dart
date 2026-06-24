@@ -272,32 +272,132 @@ class HomeContentState extends State<HomeContent> {
     }
   }
 
-  Future<void> tambahKeranjang(int makananId) async {
+  Future<void> tambahKeranjang(
+    int makananId, {
+    bool forceReplace = false,
+  }) async {
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('token');
+
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      String? token =
+          prefs.getString('token');
 
       final response = await http.post(
-        Uri.parse("${ApiService.baseUrl}/api/keranjang/tambah"),
+        Uri.parse(
+          "${ApiService.baseUrl}/api/keranjang/tambah",
+        ),
         headers: {
           "Accept": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization":
+              "Bearer $token",
         },
         body: {
-          "makanan_id": makananId.toString(),
+          "makanan_id":
+              makananId.toString(),
           "jumlah": "1",
+          "force_replace":
+              forceReplace
+                  ? "1"
+                  : "0",
         },
       );
 
-      final data = jsonDecode(response.body);
+      final data =
+          jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        Fluttertoast.showToast(msg: data["message"]);
-      } else {
-        Fluttertoast.showToast(msg: "Gagal tambah keranjang");
+
+        Fluttertoast.showToast(
+          msg: data["message"],
+        );
+
       }
+
+      else if (
+          response.statusCode == 409 &&
+          data["seller_berbeda"] ==
+              true) {
+
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          builder: (context) {
+
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text(
+                "Seller Berbeda",
+              ),
+
+              content: const Text(
+                "Keranjang Anda berisi produk dari toko lain.\n\nHapus keranjang lama dan ganti dengan produk baru?",
+              ),
+
+              actions: [
+
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(
+                      context,
+                    );
+                  },
+                  child: const Text(
+                    "Batal",
+                  ),
+                ),
+
+                ElevatedButton(
+                  style:
+                      ElevatedButton
+                          .styleFrom(
+                    backgroundColor:
+                        Colors.orange,
+                    foregroundColor:
+                        Colors.white,
+                  ),
+                  onPressed: () async {
+
+                    Navigator.pop(
+                      context,
+                    );
+
+                    await tambahKeranjang(
+                      makananId,
+                      forceReplace:
+                          true,
+                    );
+                  },
+                  child: const Text(
+                    "Hapus & Ganti",
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+
+      }
+
+      else {
+
+        Fluttertoast.showToast(
+          msg:
+              data["message"] ??
+              "Gagal tambah keranjang",
+        );
+
+      }
+
     } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+
+      Fluttertoast.showToast(
+        msg: e.toString(),
+      );
+
     }
   }
 

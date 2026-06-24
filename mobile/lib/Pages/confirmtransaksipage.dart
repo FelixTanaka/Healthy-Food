@@ -29,6 +29,66 @@ class ConfirmTransaksiPage extends StatefulWidget {
 
 class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
   bool isLoading = false;
+  int ongkir = 0;
+
+
+  @override
+  void initState() {
+    super.initState();
+
+    hitungOngkir();
+  }
+
+  Future<void> hitungOngkir() async {
+    try {
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      String? token =
+          prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse(
+          "${ApiService.baseUrl}/api/hitung-ongkir",
+        ),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: {
+          "latitude": widget.selectedAddress['latitude']
+              .toString(),
+
+          "longitude": widget.selectedAddress['longitude']
+              .toString(),
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        final data =
+            jsonDecode(response.body);
+
+        setState(() {
+          ongkir = data['ongkir'] ?? 0;
+        });
+
+      } else {
+
+        debugPrint(
+          "Gagal hitung ongkir: ${response.body}",
+        );
+
+      }
+
+    } catch (e) {
+
+      debugPrint(
+        "Error ongkir: $e",
+      );
+
+    }
+  }
 
   Future<void> createInvoice() async {
     if (isLoading) return;
@@ -56,6 +116,15 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
 
         body: jsonEncode({
           'alamat_pengiriman': widget.selectedAddress['alamat'],
+          "latitude":
+              widget.selectedAddress["latitude"],
+
+          "longitude":
+              widget.selectedAddress["longitude"],
+
+          "ongkir":
+              ongkir,
+
         }),
       );
 
@@ -277,6 +346,14 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
                     Text("Rp ${widget.biayaAdmin}"),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Ongkir"),
+                    Text("Rp $ongkir"),
+                  ],
+                ),
                 Divider(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -286,7 +363,7 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      "Rp ${widget.subtotal + widget.biayaAdmin}",
+                      "Rp ${widget.subtotal + widget.biayaAdmin + ongkir}",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.orange,

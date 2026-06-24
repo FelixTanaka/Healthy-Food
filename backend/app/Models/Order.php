@@ -20,6 +20,9 @@ class Order extends Model
         'tanggal_transaksi',
         'alamat_pengiriman',
         'external_id',
+        'ongkir',
+        'longitude',
+        'latitude',
     ];
 
     public function user()

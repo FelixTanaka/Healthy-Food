@@ -40,8 +40,8 @@ class SellerController extends Controller
             'nama_toko' => 'nullable|string|max:255',
             'alamat' => 'nullable|string',
             'deskripsi' => 'nullable|string',
-            'jam_buka' => 'nullable|string|max:20',
-            'jam_tutup' => 'nullable|string|max:20',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
          if ($request->filled('username')) {
@@ -74,12 +74,12 @@ class SellerController extends Controller
             $seller->deskripsi = $request->deskripsi;
         }
 
-        if ($request->filled('jam_buka')) {
-            $seller->jam_buka = $request->jam_buka;
+        if ($request->filled('latitude')) {
+            $seller->latitude = $request->latitude;
         }
 
-        if ($request->filled('jam_tutup')) {
-            $seller->jam_tutup = $request->jam_tutup;
+        if ($request->filled('longitude')) {
+            $seller->longitude = $request->longitude;
         }
 
         $seller->save();
@@ -118,11 +118,7 @@ class SellerController extends Controller
     public function index()
     {
         $sellers = Seller::with('user')
-            ->withCount([
-                'makanan as makanan_count' => function ($query) {
-                    $query->where('status', 'dikonfirmasi');
-                }
-            ])
+            ->withCount('makanan')
             ->orderBy('id', 'desc')
             ->get();
 
@@ -145,8 +141,6 @@ class SellerController extends Controller
         $request->validate([
             'nama_toko' => 'nullable|string|max:255',
             'alamat' => 'nullable|string',
-            'jam_buka' => 'nullable|string|max:20',
-            'jam_tutup' => 'nullable|string|max:20',
             'deskripsi' => 'nullable|string',
         ]);
 
@@ -156,14 +150,6 @@ class SellerController extends Controller
 
         if ($request->filled('alamat')) {
             $seller->alamat = $request->alamat;
-        }
-
-        if ($request->filled('jam_buka')) {
-            $seller->jam_buka = $request->jam_buka;
-        }
-
-        if ($request->filled('jam_tutup')) {
-            $seller->jam_tutup = $request->jam_tutup;
         }
 
         if ($request->filled('deskripsi')) {

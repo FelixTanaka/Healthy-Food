@@ -8,6 +8,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:mobile/Pages/loginpage.dart';
+import 'package:mobile/Pages/seller/editalamattokopage.dart';
 
 class ProfileToko extends StatefulWidget {
   const ProfileToko({super.key});
@@ -20,13 +21,13 @@ class ProfileTokoState extends State<ProfileToko> {
   String namaToko = "";
   String deskripsi = "";
   String alamat = "";
-  String jamBuka = "";
-  String jamTutup = "";
   String fotoToko = "";
   String username = "";
   String email = "";
   String noTelp = "";
   String password = "";
+  double? latitude;
+  double? longitude;
 
   @override
   void initState() {
@@ -59,8 +60,13 @@ class ProfileTokoState extends State<ProfileToko> {
         namaToko = data['data']['nama_toko'] ?? "";
         deskripsi = data['data']['deskripsi'] ?? "";
         alamat = data['data']['alamat'] ?? "";
-        jamBuka = data['data']['jam_buka'] ?? "";
-        jamTutup = data['data']['jam_tutup'] ?? "";
+        latitude = double.tryParse(
+          data['data']['latitude']?.toString() ?? "",
+        );
+
+        longitude = double.tryParse(
+          data['data']['longitude']?.toString() ?? "",
+        );
         fotoToko = data['data']['foto_toko'] ?? "";
         username = data['data']['user']['username'] ?? "";
         email = data['data']['user']['email'] ?? "";
@@ -372,47 +378,22 @@ class ProfileTokoState extends State<ProfileToko> {
               label: "Alamat",
               value: alamat,
               icon: Icons.location_on,
-              onTap: () {
-                showEditField(context, "Alamat", alamat, (value) {
-                  setState(() {
-                    alamat = value;
-                  });
-                  updateSellerProfile({
-                    "alamat": value,
-                  });
-                });
-              },
-            ),
+              onTap: () async {
 
-            buildItem(
-              label: "Jam Buka",
-              value: jamBuka,
-              icon: Icons.access_time,
-              onTap: () {
-                showEditField(context, "Jam Buka", jamBuka, (value) {
-                  setState(() {
-                    jamBuka = value;
-                  });
-                  updateSellerProfile({
-                    "jam_buka": value,
-                  });
-                });
-              },
-            ),
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EditAlamatTokoPage(
+                      alamatAwal: alamat,
+                      latitudeAwal: latitude,
+                      longitudeAwal: longitude,
+                    ),
+                  ),
+                );
 
-            buildItem(
-              label: "Jam Tutup",
-              value: jamTutup,
-              icon: Icons.access_time_filled,
-              onTap: () {
-                showEditField(context, "Jam Tutup", jamTutup, (value) {
-                  setState(() {
-                    jamTutup = value;
-                  });
-                  updateSellerProfile({
-                    "jam_tutup": value,
-                  });
-                });
+                if (result == true) {
+                  getSellerProfile();
+                }
               },
             ),
 

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../widgets/editprofile.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mobile/Pages/tambahalamatpage.dart';
+import 'package:mobile/Pages/editalamatpage.dart';
 
 class AlamatPage extends StatefulWidget {
   const AlamatPage({super.key});
@@ -126,7 +127,11 @@ class AlamatPageState extends State<AlamatPage> {
     }
   }
 
-  Future<void> tambahAlamatApi(String alamat) async {
+  Future<void> tambahAlamatApi(
+    String alamat,
+    double? latitude,
+    double? longitude,
+  ) async {
     try {
 
       final prefs = await SharedPreferences.getInstance();
@@ -141,6 +146,8 @@ class AlamatPageState extends State<AlamatPage> {
         },
         body: {
           "alamat": alamat,
+          "latitude": latitude?.toString() ?? "",
+          "longitude": longitude?.toString() ?? "",
         },
       );
 
@@ -173,104 +180,6 @@ class AlamatPageState extends State<AlamatPage> {
     }
   }
 
-  void tambahAlamat() {
-    TextEditingController controller = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      sheetAnimationStyle: AnimationStyle(
-        duration: Duration(milliseconds: 400),
-      ),
-      builder: (context) {
-        return AnimatedPadding(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 10,
-          ),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Tambah Alamat",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      hintText: "Masukkan alamat",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.orangeAccent),
-                            foregroundColor: Colors.black, 
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context); 
-                          },
-                          child: const Text("Batal"),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orangeAccent,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () {
-                            if (controller.text.isEmpty) return;
-
-                            setState(() {
-                              alamatList.add({
-                                'id': DateTime.now().millisecondsSinceEpoch,
-                                'alamat': controller.text,
-                              });
-                            }); 
-
-                            tambahAlamatApi(
-                              controller.text,
-                            );
-
-                            Navigator.pop(context); 
-                          },
-                          child: const Text(
-                            "Simpan",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -279,6 +188,16 @@ class AlamatPageState extends State<AlamatPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.black,
+          ),
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+        ),
 
         title: const Text(
           "Alamat Saya",
@@ -318,21 +237,21 @@ class AlamatPageState extends State<AlamatPage> {
                 Row(
                   children: [
                     IconButton(
-                      onPressed: () {
-                        showEditField(
+                      onPressed: () async {
+
+                        final result = await Navigator.push(
                           context,
-                          "Alamat",
-                          alamatList[index]['alamat'],
-                          (value) {
-                            setState(() {
-                              alamatList[index]['alamat'] = value;
-                            });
-                            updateAlamat(
-                              alamatList[index]['id'],
-                              value,
-                            );
-                          },
+                          MaterialPageRoute(
+                            builder: (_) => EditAlamatPage(
+                              id: alamatList[index]['id'],
+                              alamatAwal: alamatList[index]['alamat'],
+                            ),
+                          ),
                         );
+
+                        if (result == true) {
+                          getAlamat();
+                        }
                       },
                       icon: const Icon(Icons.edit, color: Colors.blue),
                     ),
@@ -356,7 +275,19 @@ class AlamatPageState extends State<AlamatPage> {
         backgroundColor: Colors.orangeAccent,
         foregroundColor: Colors.white, 
         elevation: 4,
-        onPressed: tambahAlamat,
+        onPressed: () async {
+
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const TambahAlamatPage(),
+            ),
+          );
+
+          if (result == true) {
+            getAlamat();
+          }
+        },
         child: const Icon(Icons.add),
       ),
     );

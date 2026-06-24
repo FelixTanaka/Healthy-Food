@@ -14,8 +14,6 @@ export default function Selller() {
 
     const [namaToko, setNamaToko] = useState("");
     const [alamat, setAlamat] = useState("");
-    const [jamBuka, setJamBuka] = useState("");
-    const [jamTutup, setJamTutup] = useState("");
     const [deskripsi, setDeskripsi] = useState("");
 
     const getSeller = async () => {
@@ -73,8 +71,6 @@ export default function Selller() {
                 {
                     nama_toko: namaToko,
                     alamat: alamat,
-                    jam_buka: jamBuka,
-                    jam_tutup: jamTutup,
                     deskripsi: deskripsi,
                 },
                 {
@@ -101,8 +97,6 @@ export default function Selller() {
 
         setNamaToko(item.nama_toko || "");
         setAlamat(item.alamat || "");
-        setJamBuka(item.jam_buka || "");
-        setJamTutup(item.jam_tutup || "");
         setDeskripsi(item.deskripsi || "");
 
         setShowEditModal(true);
@@ -157,8 +151,6 @@ export default function Selller() {
                             <th className="p-3 text-left">No Telp</th>
                             <th className="p-3 text-left">Nama Toko</th>
                             <th className="p-3 text-left">Alamat</th>
-                            <th className="p-3 text-center">Jam Buka</th>
-                            <th className="p-3 text-center">Jam Tutup</th>
                             <th className="p-3 text-center">Jumlah Makanan</th>
                             <th className="p-3 text-center">Aksi</th>
                         </tr>
@@ -189,14 +181,6 @@ export default function Selller() {
 
                                     <td className="p-3">
                                         {item.alamat || "-"}
-                                    </td>
-
-                                    <td className="p-3 text-center">
-                                        {item.jam_buka || "-"}
-                                    </td>
-
-                                    <td className="p-3 text-center">
-                                        {item.jam_tutup || "-"}
                                     </td>
 
                                     <td className="p-3 text-center">
@@ -326,20 +310,6 @@ export default function Selller() {
                                 </p>
                             </div>
 
-                            <div>
-                                <p className="text-gray-500">Jam Buka</p>
-                                <p className="font-medium">
-                                    {selectedSeller?.jam_buka || "-"}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-gray-500">Jam Tutup</p>
-                                <p className="font-medium">
-                                    {selectedSeller?.jam_tutup || "-"}
-                                </p>
-                            </div>
-
                             <div className="col-span-2">
                                 <p className="text-gray-500">Alamat</p>
                                 <p className="font-medium">
@@ -398,20 +368,6 @@ export default function Selller() {
                             placeholder="Alamat"
                             value={alamat}
                             onChange={(e) => setAlamat(e.target.value)}
-                        />
-
-                        <input
-                            className="w-full border px-3 py-2 mb-2 rounded"
-                            placeholder="Jam Buka"
-                            value={jamBuka}
-                            onChange={(e) => setJamBuka(e.target.value)}
-                        />
-
-                        <input
-                            className="w-full border px-3 py-2 mb-2 rounded"
-                            placeholder="Jam Tutup"
-                            value={jamTutup}
-                            onChange={(e) => setJamTutup(e.target.value)}
                         />
 
                         <textarea

@@ -21,11 +21,15 @@ class AlamatController extends Controller
     {
         $request->validate([
             'alamat' => 'required|string',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
         ]);
 
         $alamat = Alamat::create([
             'user_id' => auth()->id(),
             'alamat' => $request->alamat,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
         ]);
 
         return response()->json([
@@ -40,9 +44,13 @@ class AlamatController extends Controller
 
         $request->validate([
             'alamat' => 'required|string',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
         ]);
 
         $alamat->alamat = $request->alamat;
+        $alamat->latitude = $request->latitude;
+        $alamat->longitude = $request->longitude;
 
         $alamat->save();
 

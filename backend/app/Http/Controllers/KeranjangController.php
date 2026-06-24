@@ -5,21 +5,33 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Keranjang;
 use App\Models\KeranjangItem;
+use App\Models\Makanan;
 
 class KeranjangController extends Controller
 {
     public function tambahKeranjang(Request $request)
     {
         $request->validate([
-            'makanan_id' => 'required',
+            'makanan_id' => 'required|exists:makanan,id',
             'jumlah' => 'required|integer|min:1',
+            'force_replace' => 'nullable|boolean',
         ]);
 
         $userId = auth()->id();
 
-        $keranjang = Keranjang::where('user_id', $userId)
-            ->where('status', 'Aktif')
-            ->first();
+        $makanan = Makanan::findOrFail(
+            $request->makanan_id
+        );
+
+        $keranjang = Keranjang::where(
+            'user_id',
+            $userId
+        )
+        ->where(
+            'status',
+            'Aktif'
+        )
+        ->first();
 
         if (!$keranjang) {
 
@@ -29,26 +41,84 @@ class KeranjangController extends Controller
             ]);
         }
 
-        $item = KeranjangItem::where('keranjang_id', $keranjang->id)
-            ->where('makanan_id', $request->makanan_id)
-            ->first();
+        $itemPertama = KeranjangItem::where(
+            'keranjang_id',
+            $keranjang->id
+        )
+        ->with('makanan')
+        ->first();
+
+        if ($itemPertama) {
+
+            $sellerLama =
+                $itemPertama
+                    ->makanan
+                    ->seller_id;
+
+            $sellerBaru =
+                $makanan
+                    ->seller_id;
+
+            if ($sellerLama != $sellerBaru) {
+
+                if (
+                    !$request->boolean(
+                        'force_replace'
+                    )
+                ) {
+
+                    return response()->json([
+                        'message' =>
+                            'Keranjang berisi produk dari seller lain',
+                        'seller_berbeda' => true,
+                    ], 409);
+                }
+
+                KeranjangItem::where(
+                    'keranjang_id',
+                    $keranjang->id
+                )->delete();
+            }
+        }
+
+        $item = KeranjangItem::where(
+            'keranjang_id',
+            $keranjang->id
+        )
+        ->where(
+            'makanan_id',
+            $request->makanan_id
+        )
+        ->first();
 
         if ($item) {
 
-            $item->jumlah += $request->jumlah;
+            $item->jumlah +=
+                $request->jumlah;
+
             $item->save();
 
         } else {
 
             KeranjangItem::create([
-                'keranjang_id' => $keranjang->id,
-                'makanan_id' => $request->makanan_id,
-                'jumlah' => $request->jumlah,
+                'keranjang_id' =>
+                    $keranjang->id,
+
+                'makanan_id' =>
+                    $request->makanan_id,
+
+                'jumlah' =>
+                    $request->jumlah,
             ]);
         }
 
         return response()->json([
-            'message' => 'Berhasil tambah ke keranjang'
+            'message' =>
+                $request->boolean(
+                    'force_replace'
+                )
+                    ? 'Keranjang berhasil diganti'
+                    : 'Berhasil tambah ke keranjang',
         ]);
     }
 

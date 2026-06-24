@@ -17,8 +17,8 @@ class Seller extends Model
         'alamat',
         'deskripsi',
         'foto_toko',
-        'jam_buka',
-        'jam_tutup',
+        'latitude',
+        'longitude',
     ];
 
     public function user()

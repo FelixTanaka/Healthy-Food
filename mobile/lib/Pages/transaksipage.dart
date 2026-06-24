@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/Pages/alamatpage.dart';
 
 class TransaksiPage extends StatefulWidget {
   const TransaksiPage({super.key});
@@ -202,9 +203,10 @@ class _TransaksiPageState extends State<TransaksiPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          selectedAddress?['alamat'] ?? '',
-                          style: const TextStyle(color: Colors.black87),
-                        ),
+                          addresses.isEmpty
+                              ? "Belum ada alamat"
+                              : selectedAddress?['alamat'] ?? "",
+                        )
                       ],
                     ),
                   ),
@@ -349,6 +351,66 @@ class _TransaksiPageState extends State<TransaksiPage> {
         ),
         child: ElevatedButton(
           onPressed: () {
+
+            if (addresses.isEmpty) {
+
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    backgroundColor: Colors.white,
+
+                    title: const Text(
+                      "Alamat Belum Ada",
+                    ),
+
+                    content: const Text(
+                      "Silakan tambahkan alamat terlebih dahulu sebelum melakukan checkout.",
+                    ),
+
+                    actions: [
+
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          "Batal",
+                        ),
+                      ),
+
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+
+                          Navigator.pop(context);
+
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AlamatPage(),
+                            ),
+                          );
+
+                          if (result == true) {
+                            getAlamat(); 
+                          }
+                        },
+                        child: const Text(
+                          "Tambah Alamat",
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              return;
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(

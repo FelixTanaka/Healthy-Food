@@ -112,43 +112,122 @@ class MenuPageState extends State<MenuPage> {
     });
   }
 
-  Future<void> tambahKeranjang(int makananId) async {
+  Future<void> tambahKeranjang(
+    int makananId, {
+    bool forceReplace = false,
+  }) async {
+
     try {
 
-      final prefs = await SharedPreferences.getInstance();
+      final prefs =
+          await SharedPreferences.getInstance();
 
-      String? token = prefs.getString('token');
+      String? token =
+          prefs.getString('token');
 
       final response = await http.post(
-        Uri.parse("${ApiService.baseUrl}/api/keranjang/tambah"),
-
+        Uri.parse(
+          "${ApiService.baseUrl}/api/keranjang/tambah",
+        ),
         headers: {
           "Accept": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization":
+              "Bearer $token",
         },
-
         body: {
-          "makanan_id": makananId.toString(),
+          "makanan_id":
+              makananId.toString(),
           "jumlah": "1",
+          "force_replace":
+              forceReplace
+                  ? "1"
+                  : "0",
         },
       );
 
-      final data = jsonDecode(response.body);
+      final data =
+          jsonDecode(response.body);
 
       if (response.statusCode == 200) {
 
         Fluttertoast.showToast(
           msg: data["message"],
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
         );
 
-      } else {
+      }
+
+      else if (
+          response.statusCode == 409 &&
+          data["seller_berbeda"] ==
+              true) {
+
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          builder: (context) {
+
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text(
+                "Seller Berbeda",
+              ),
+
+              content: const Text(
+                "Keranjang Anda berisi produk dari toko lain.\n\nHapus keranjang lama dan ganti dengan produk baru?",
+              ),
+
+              actions: [
+
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(
+                      context,
+                    );
+                  },
+                  child: const Text(
+                    "Batal",
+                  ),
+                ),
+
+                ElevatedButton(
+                  style:
+                      ElevatedButton
+                          .styleFrom(
+                    backgroundColor:
+                        Colors.orange,
+                    foregroundColor:
+                        Colors.white,
+                  ),
+                  onPressed: () async {
+
+                    Navigator.pop(
+                      context,
+                    );
+
+                    await tambahKeranjang(
+                      makananId,
+                      forceReplace:
+                          true,
+                    );
+                  },
+                  child: const Text(
+                    "Hapus & Ganti",
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+
+      }
+
+      else {
 
         Fluttertoast.showToast(
-          msg: "Gagal tambah keranjang",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
+          msg:
+              data["message"] ??
+              "Gagal tambah keranjang",
         );
 
       }
@@ -157,8 +236,6 @@ class MenuPageState extends State<MenuPage> {
 
       Fluttertoast.showToast(
         msg: e.toString(),
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
       );
 
     }

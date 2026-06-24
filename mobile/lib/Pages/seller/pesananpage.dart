@@ -106,6 +106,7 @@ class PesananPageState extends State<PesananPage> {
 
               "total_item":
                   item['total_item'],
+                "ongkir": item['ongkir'],  
 
               "items":
 
@@ -650,6 +651,24 @@ class PesananPageState extends State<PesananPage> {
 
                     children: [
 
+                      pw.Text("Ongkir"),
+
+                      pw.Text(
+                        "Rp ${order["ongkir"]}",
+                      ),
+                    ],
+                  ),
+
+                  pw.Divider(),
+
+                  pw.Row(
+
+                    mainAxisAlignment:
+                        pw.MainAxisAlignment
+                            .spaceBetween,
+
+                    children: [
+
                       pw.Text(
 
                         "Total",
@@ -949,7 +968,7 @@ class PesananPageState extends State<PesananPage> {
         color = Colors.green;
         break;
 
-      case "pending":
+      case "belumBayar":
         color = Colors.orange;
         break;
 
@@ -991,9 +1010,13 @@ class PesananPageState extends State<PesananPage> {
 
     switch (status) {
 
-      case "menunggu pembayaran":
+      case "menunggu_pembayaran":
         color = Colors.orange;
         break;
+
+      case "dikirim":
+        color = Colors.deepOrange;
+        break;  
 
       case "selesai":
         color = Colors.green;
@@ -1003,8 +1026,12 @@ class PesananPageState extends State<PesananPage> {
         color = Colors.red;
         break;
 
-      default:
+      case "diproses":
         color = Colors.blue;
+        break;  
+
+      default:
+        color = Colors.grey;
     }
 
     return Container(

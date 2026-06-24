@@ -71,6 +71,10 @@ class PembeliController extends Controller
                 'status_transaksi',
                 'dibayar'
             )
+            ->where(
+                'status_order',
+                'selesai'
+            )
             ->whereDate(
                 'tanggal_transaksi',
                 today()

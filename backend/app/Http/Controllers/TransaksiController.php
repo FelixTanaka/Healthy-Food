@@ -40,7 +40,7 @@ class TransaksiController extends Controller
 
         $biayaAdmin = $totalHarga * 0.10;
 
-        $grandTotal = $totalHarga + $biayaAdmin;
+        $grandTotal = $totalHarga + $biayaAdmin + $request->ongkir;
 
         $externalId = 'INV-' . time();
 
@@ -52,6 +52,9 @@ class TransaksiController extends Controller
             'status_transaksi' => 'belumBayar',
             'status_order' => 'menunggu_pembayaran',
             'external_id' => $externalId,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'ongkir' => $request->ongkir,
         ]);
 
         foreach ($items as $item) {
@@ -314,6 +317,48 @@ class TransaksiController extends Controller
         ]);
     }
 
+    public function pesananDikirim($id)
+    {
+        $seller = Seller::where(
+            'user_id',
+            auth()->id()
+        )->first();
+
+        if (!$seller) {
+
+            return response()->json([
+                'message' => 'Seller tidak ditemukan'
+            ], 404);
+        }
+
+        $order = Order::whereHas(
+            'orderItems.makanan',
+            function ($query) use ($seller) {
+
+                $query->where(
+                    'seller_id',
+                    $seller->id
+                );
+            }
+        )
+        ->find($id);
+
+        if (!$order) {
+
+            return response()->json([
+                'message' => 'Pesanan tidak ditemukan'
+            ], 404);
+        }
+
+        $order->update([
+            'status_order' => 'dikirim'
+        ]);
+
+        return response()->json([
+            'message' => 'Pesanan berhasil dikirim'
+        ]);
+    }
+
     public function transaksiAdmin()
     {
         $orders = Order::with([
@@ -425,5 +470,78 @@ class TransaksiController extends Controller
             "data"=>$orders
         ]);
 
+    }
+
+    private function haversine(
+        $lat1,
+        $lon1,
+        $lat2,
+        $lon2
+    ) {
+
+        $earthRadius = 6371;
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a =
+            sin($dLat / 2) *
+            sin($dLat / 2) +
+            cos(deg2rad($lat1)) *
+            cos(deg2rad($lat2)) *
+            sin($dLon / 2) *
+            sin($dLon / 2);
+
+        $c =
+            2 *
+            atan2(
+                sqrt($a),
+                sqrt(1 - $a)
+            );
+
+        return $earthRadius * $c;
+    }
+
+    public function hitungOngkir(Request $request)
+    {
+        $userId = auth()->id();
+
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $keranjang = Keranjang::where(
+            'user_id',
+            $userId
+        )
+        ->where(
+            'status',
+            'Aktif'
+        )
+        ->firstOrFail();
+
+        $item = KeranjangItem::where(
+            'keranjang_id',
+            $keranjang->id
+        )
+        ->with('makanan.seller')
+        ->first();
+
+        $seller = $item->makanan->seller;
+
+        $jarak = $this->haversine(
+            $seller->latitude,
+            $seller->longitude,
+            $request->latitude,
+            $request->longitude
+        );
+
+        $ongkir = ceil($jarak * 1000);
+
+        return response()->json([
+            'jarak' => round($jarak, 2),
+            'ongkir' => $ongkir,
+        ]);
     }
 }
