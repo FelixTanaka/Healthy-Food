@@ -13,6 +13,8 @@ class Alamat extends Model
     protected $fillable = [
         'alamat',
         'user_id',
+        'latitude',
+        'longitude',
     ];
 
     public function user()
