@@ -128,6 +128,7 @@ export default function Transaksi() {
                 const subtotalTransaksi = trx.total_harga || 0;
                 const admin = trx.biaya_admin || 0;
                 const jumlahItem = trx.jumlah_item || 0;
+                const ongkir = trx.ongkir;
 
                 totalSemua += subtotalTransaksi;
                 totalAdmin += admin;
@@ -148,7 +149,7 @@ export default function Transaksi() {
                 );
 
                 doc.text(
-                    `Total: Rp ${subtotalTransaksi.toLocaleString()} | Admin: Rp ${admin.toLocaleString()} | Item: ${jumlahItem}`,
+                    `Total: Rp ${subtotalTransaksi.toLocaleString()} | Admin: Rp ${admin.toLocaleString()} | Item: ${jumlahItem} | Ongkir: ${ongkir}`,
                     14,
                     y + 12
                 );
@@ -277,6 +278,11 @@ export default function Transaksi() {
             item.tanggal_transaksi
                 ?.toLowerCase()
                 .includes(keyword)
+            ||
+            
+            item.ongkir
+                ?.toLowerCase()
+                .includes(keyword)
         );
 
     });
@@ -368,6 +374,10 @@ export default function Transaksi() {
                                 </th>
 
                                 <th className="p-3 text-center">
+                                    Ongkir
+                                </th>
+
+                                <th className="p-3 text-center">
                                     Jumlah Item
                                 </th>
 
@@ -431,6 +441,9 @@ export default function Transaksi() {
                                         {item.biaya_admin}
                                     </td>
 
+                                    <td className="p-3 text-center">
+                                        {item.ongkir}
+                                    </td>
 
                                     <td className="p-3 text-center">
                                         {item.jumlah_item}
@@ -673,7 +686,15 @@ export default function Transaksi() {
                                 </p>
                             </div>
 
+                            <div>
+                                <p className="text-gray-500">
+                                    Ongkir
+                                </p>
 
+                                <p className="font-medium">
+                                    Rp {selectedTransaksi.ongkir}
+                                </p>
+                            </div>
 
                             <div>
                                 <p className="text-gray-500">
