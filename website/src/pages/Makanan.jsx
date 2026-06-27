@@ -85,6 +85,11 @@ export default function Makanan() {
 
     const totalPages = Math.ceil(filteredMakanan.length / itemsPerPage);
 
+    const bahan =
+    typeof selectedMakanan?.bahan === "string"
+        ? JSON.parse(selectedMakanan.bahan)
+        : selectedMakanan?.bahan || [];
+
     return (
         <div className="flex bg-gray-100 min-h-screen">
 
@@ -226,98 +231,179 @@ export default function Makanan() {
                 </div>
             </div>
 
-            {showModal && (
-                <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
-                    <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-3xl p-6 border border-white/20">
-                        <div className="flex justify-between items-center mb-5">
-                            <h2 className="text-xl font-semibold text-gray-800">
-                                Detail Makanan
-                            </h2>
-                            <button 
+            {showModal && selectedMakanan && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden">
+
+                        <div className="flex justify-between items-center px-6 py-4 border-b bg-gradient-to-r from-orange-500 to-orange-400">
+
+                            <div>
+                                <h2 className="text-xl font-bold text-white">
+                                    Detail Makanan
+                                </h2>
+                                <p className="text-sm text-orange-100">
+                                    Informasi lengkap menu
+                                </p>
+                            </div>
+
+                            <button
                                 onClick={() => setShowModal(false)}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
+                                className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
                             >
                                 ✕
                             </button>
+
                         </div>
 
-                        <div className="flex gap-6">
-                            <div className="w-1/3">
-                                <img
-                                    src={`http://127.0.0.1:8000/storage/${selectedMakanan.gambar_makanan}`}
-                                    alt="makanan"
-                                    className="w-full h-48 object-cover rounded-xl shadow"
-                                />
+                        <div className="overflow-y-auto max-h-[calc(85vh-80px)] p-6">
 
-                                <div className="mt-3">
-                                    <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-600 font-medium">
-                                        {selectedMakanan.status}
-                                    </span>
+                            <div className="flex gap-6">
+
+                                <div className="w-1/3">
+
+                                    <img
+                                        src={`http://127.0.0.1:8000/storage/${selectedMakanan.gambar_makanan}`}
+                                        alt={selectedMakanan.nama_makanan}
+                                        className="w-full h-60 object-cover rounded-xl shadow-md"
+                                    />
+
                                 </div>
-                            </div>
 
-                            <div className="w-2/3 flex flex-col justify-between">
-                                <div className="space-y-3 text-sm text-gray-700">
-                                    <div>
-                                        <p className="text-gray-400">Nama</p>
-                                        <p className="font-semibold text-lg">{selectedMakanan.nama_makanan}</p>
+                                <div className="w-2/3">
 
-                                        <p className="text-sm text-gray-400 mt-1">Toko</p>
-                                        <p className="text-sm font-medium text-gray-700">{selectedMakanan.seller.nama_toko}</p>
+                                    <h1 className="text-2xl font-bold text-gray-800">
+                                        {selectedMakanan.nama_makanan}
+                                    </h1>
+
+                                    <p className="text-gray-500 mt-1">
+                                        {selectedMakanan.seller.nama_toko}
+                                    </p>
+
+                                    <div className="flex gap-2 mt-3">
+
+                                        <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-600 text-xs font-semibold">
+                                            {selectedMakanan.kategori.nama_kategori}
+                                        </span>
+
                                     </div>
 
-                                    <div>
-                                        <p className="text-gray-400">Kategori</p>
-                                        <p>{selectedMakanan.kategori.nama_kategori}</p>
-                                    </div>
+                                    <div className="mt-5">
 
-                                    <div>
-                                        <p className="text-gray-400">Harga</p>
-                                        <p className="text-orange-500 font-medium">Rp {selectedMakanan.harga}</p>
-                                    </div>
-
-                                    <div className="grid grid-cols-4 gap-3 mt-2">
-
-                                        <div className="bg-gray-100 rounded-lg p-3 text-center">
-                                            <p className="text-xs text-gray-400">Kalori</p>
-                                            <p className="font-semibold">{selectedMakanan.kalori}</p>
-                                        </div>
-
-                                        <div className="bg-gray-100 rounded-lg p-3 text-center">
-                                            <p className="text-xs text-gray-400">Protein</p>
-                                            <p className="font-semibold">{selectedMakanan.protein}g</p>
-                                        </div>
-
-                                        <div className="bg-gray-100 rounded-lg p-3 text-center">
-                                            <p className="text-xs text-gray-400">Karbo</p>
-                                            <p className="font-semibold">{selectedMakanan.karbohidrat}g</p>
-                                        </div>
-
-                                        <div className="bg-gray-100 rounded-lg p-3 text-center">
-                                            <p className="text-xs text-gray-400">Lemak</p>
-                                            <p className="font-semibold">{selectedMakanan.lemak}g</p>
-                                        </div> 
-                                    </div>
-
-                                    <div>
-                                        <p className="text-gray-400">Deskripsi</p>
-                                        <p className="leading-relaxed">
-                                            {selectedMakanan.deskripsi}
+                                        <p className="text-sm text-gray-400">
+                                            Harga
                                         </p>
+
+                                        <h2 className="text-3xl font-bold text-orange-500">
+                                            Rp {Number(selectedMakanan.harga).toLocaleString("id-ID")}
+                                        </h2>
+
                                     </div>
+
+
+                                    <div className="grid grid-cols-4 gap-3 mt-6">
+
+                                        <div className="bg-orange-50 rounded-xl border h-24 flex flex-col items-center justify-center">
+                                            <p className="text-sm text-gray-600">Kalori</p>
+                                            <p className="font-bold text-lg text-orange-600">
+                                                {selectedMakanan.kalori} Kcal
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-blue-50 rounded-xl border h-24 flex flex-col items-center justify-center">
+                                            <p className="text-sm text-gray-600">Protein</p>
+                                            <p className="font-bold text-lg text-blue-600">
+                                                {selectedMakanan.protein} g
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-yellow-50 rounded-xl border h-24 flex flex-col items-center justify-center">
+                                            <p className="text-sm text-gray-600">Karbo</p>
+                                            <p className="font-bold text-lg text-yellow-600">
+                                                {selectedMakanan.karbohidrat} g
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-pink-50 rounded-xl border h-24 flex flex-col items-center justify-center">
+                                            <p className="text-sm text-gray-600">Lemak</p>
+                                            <p className="font-bold text-lg text-pink-600">
+                                                {selectedMakanan.lemak} g
+                                            </p>
+                                        </div>
+
+                                    </div>
+
                                 </div>
 
-                                <div className="flex justify-end gap-3 mt-6">
-                                    <button
-                                        onClick={() => setShowModal(false)}
-                                        className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm"
-                                    >
-                                        Batal
-                                    </button>
-                                </div>
                             </div>
+
+
+                            <div className="mt-6">
+
+                                <h3 className="font-semibold text-gray-700 mb-3">
+                                    Bahan Makanan
+                                </h3>
+
+                                <div className="border rounded-xl overflow-hidden">
+
+                                    {bahan.map((item, index) => (
+
+                                        <div
+                                            key={index}
+                                            className="flex justify-between items-center px-4 py-3 border-b last:border-b-0 hover:bg-gray-50"
+                                        >
+
+                                            <span className="font-medium text-gray-700">
+                                                {item.nama_indonesia}
+                                            </span>
+
+                                            <span className="text-orange-500 font-semibold">
+                                                {item.amount} {item.unit}
+                                            </span>
+
+                                        </div>
+
+                                    ))}
+
+                                </div>
+
+
+                            </div>
+
+
+                            <div className="mt-6">
+
+                                <h3 className="font-semibold text-gray-700 mb-3">
+                                    Deskripsi
+                                </h3>
+
+                                <div className="bg-gray-50 rounded-xl p-4 border">
+
+                                    <p className="text-gray-600 leading-7 text-sm">
+                                        {selectedMakanan.deskripsi || "-"}
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            {/* Footer */}
+
+                            <div className="flex justify-end mt-8">
+
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium transition"
+                                >
+                                    Tutup
+                                </button>
+
+                            </div>
+
                         </div>
+
                     </div>
+
                 </div>
             )}
         </div>

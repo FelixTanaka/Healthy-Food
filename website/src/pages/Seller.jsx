@@ -10,12 +10,6 @@ export default function Selller() {
     const [search, setSearch] = useState("");
     const [selectedSeller, setSelectedSeller] = useState(null);
 
-    const [showEditModal, setShowEditModal] = useState(false);
-
-    const [namaToko, setNamaToko] = useState("");
-    const [alamat, setAlamat] = useState("");
-    const [deskripsi, setDeskripsi] = useState("");
-
     const getSeller = async () => {
         try {
             const response = await axios.get(
@@ -63,44 +57,6 @@ export default function Selller() {
     const totalPages = Math.ceil(
         filteredSeller.length / itemsPerPage
     );
-
-    const updateSeller = async () => {
-        try {
-            const response = await axios.put(
-                `http://127.0.0.1:8000/api/seller/${selectedSeller.id}`,
-                {
-                    nama_toko: namaToko,
-                    alamat: alamat,
-                    deskripsi: deskripsi,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                }
-            );
-
-            toast.success("Seller berhasil diupdate 🎉");
-
-            setShowEditModal(false);
-            getSeller();
-
-            console.log(response.data);
-        } catch (error) {
-            console.log(error);
-            toast.error("Gagal update seller 😢");
-        }
-    };
-
-    const openEditModal = (item) => {
-        setSelectedSeller(item);
-
-        setNamaToko(item.nama_toko || "");
-        setAlamat(item.alamat || "");
-        setDeskripsi(item.deskripsi || "");
-
-        setShowEditModal(true);
-    };
 
     const deleteSeller = async (id) => {
         try {
@@ -333,66 +289,7 @@ export default function Selller() {
                             >
                                 Tutup
                             </button>
-
-                            <button
-                                onClick={() => {
-                                    setShowModal(false);
-                                    openEditModal(selectedSeller);
-                                }}
-                                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm"
-                            >
-                                Edit
-                            </button>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {showEditModal && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white w-full max-w-lg p-6 rounded-xl shadow-lg">
-
-                        <h2 className="text-lg font-semibold mb-4">
-                            Edit Seller
-                        </h2>
-
-                        <input
-                            className="w-full border px-3 py-2 mb-2 rounded"
-                            placeholder="Nama Toko"
-                            value={namaToko}
-                            onChange={(e) => setNamaToko(e.target.value)}
-                        />
-
-                        <input
-                            className="w-full border px-3 py-2 mb-2 rounded"
-                            placeholder="Alamat"
-                            value={alamat}
-                            onChange={(e) => setAlamat(e.target.value)}
-                        />
-
-                        <textarea
-                            className="w-full border px-3 py-2 mb-3 rounded"
-                            placeholder="Deskripsi"
-                            value={deskripsi}
-                            onChange={(e) => setDeskripsi(e.target.value)}
-                        />
-
-                        <div className="flex justify-end gap-2">
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="px-3 py-1 bg-gray-300 rounded"
-                            >
-                                Batal
-                            </button>
-
-                            <button
-                                onClick={updateSeller}
-                                className="px-3 py-1 bg-orange-500 text-white rounded"
-                            >
-                                Update
-                            </button>
-                        </div>
-
                     </div>
                 </div>
             )}
