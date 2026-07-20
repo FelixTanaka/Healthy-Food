@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -211,7 +212,11 @@ class CartPageState extends State<CartPage> {
                               const SizedBox(height: 4),
 
                               Text(
-                                "Rp ${item["makanan"]["harga"]}",
+                                 NumberFormat.currency(
+                                  locale: 'id_ID',
+                                  symbol: 'Rp ',
+                                  decimalDigits: 0,
+                                ).format(item["makanan"]["harga"]),
                               ),
                             ],
                           ),
@@ -297,7 +302,11 @@ class CartPageState extends State<CartPage> {
                   Text("Total", style: TextStyle(color: Colors.grey)),
                   SizedBox(height: 4),
                   Text(
-                    "Rp $totalHarga",
+                    NumberFormat.currency(
+                      locale: 'id_ID',
+                      symbol: 'Rp ',
+                      decimalDigits: 0,
+                    ).format(totalHarga),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,

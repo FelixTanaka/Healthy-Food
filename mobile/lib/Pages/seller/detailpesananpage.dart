@@ -3,6 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:intl/intl.dart';
 
 class DetailPesananPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -287,8 +288,11 @@ class DetailPesananPageState extends State<DetailPesananPage> {
                             const SizedBox(height: 5),
 
                             Text(
-                              "${item["qty"]} x Rp ${item["harga"]}",
-
+                              "${item["qty"]} x ${NumberFormat.currency(
+                                locale: 'id_ID',
+                                symbol: 'Rp ',
+                                decimalDigits: 0,
+                              ).format(item["harga"])}",
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.blueGrey,
@@ -299,11 +303,13 @@ class DetailPesananPageState extends State<DetailPesananPage> {
                       ),
 
                       Text(
-                        "Rp ${item["subtotal"]}",
-
+                        NumberFormat.currency(
+                          locale: 'id_ID',
+                          symbol: 'Rp ',
+                          decimalDigits: 0,
+                        ).format(item["subtotal"]),
                         style: const TextStyle(
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -416,7 +422,11 @@ class DetailPesananPageState extends State<DetailPesananPage> {
                     const Text("Subtotal"),
 
                     Text(
-                      "Rp ${data["subtotal"]}",
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(data["subtotal"]),
                     ),
                   ],
                 ),
@@ -433,7 +443,11 @@ class DetailPesananPageState extends State<DetailPesananPage> {
                     const Text("Biaya Admin"),
 
                     Text(
-                      "Rp ${data["biaya_admin"]}",
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(data["biaya_admin"]),
                     ),
                   ],
                 ),
@@ -450,7 +464,11 @@ class DetailPesananPageState extends State<DetailPesananPage> {
                     const Text("Ongkir"),
 
                     Text(
-                      "Rp ${data["ongkir"]}",
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(data["ongkir"]),
                     ),
                   ],
                 ),
@@ -474,14 +492,14 @@ class DetailPesananPageState extends State<DetailPesananPage> {
                     ),
 
                     Text(
-                      "Rp ${data["total"]}",
-
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(data["total"]),
                       style: const TextStyle(
-                        fontWeight:
-                            FontWeight.bold,
-
+                        fontWeight: FontWeight.bold,
                         color: Colors.orange,
-
                         fontSize: 16,
                       ),
                     ),

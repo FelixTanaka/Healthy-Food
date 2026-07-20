@@ -12,6 +12,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:intl/intl.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -734,13 +735,13 @@ class MenuPageState extends State<MenuPage> {
                                 const SizedBox(height: 6),
 
                                 Text(
-                                  "Rp ${item["harga"]}",
-
+                                  NumberFormat.currency(
+                                    locale: 'id_ID',
+                                    symbol: 'Rp ',
+                                    decimalDigits: 0,
+                                  ).format(item["harga"]),
                                   style: const TextStyle(
-                                    fontWeight:
-                                        FontWeight.w600,
-
-                                    fontSize: 14,
+                                    // style kamu
                                   ),
                                 ),
 

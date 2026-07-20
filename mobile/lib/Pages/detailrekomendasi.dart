@@ -1,29 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/Pages/allreviewpage.dart';
 import 'package:mobile/services/api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 
-class DetailMenuPage extends StatelessWidget {
-  final Map<String, dynamic> item;
+class DetailRekomendasiPage extends StatefulWidget {
+  final Map<String, dynamic> food;
 
-  DetailMenuPage({super.key, required this.item});
+  const DetailRekomendasiPage({
+    super.key,
+    required this.food,
+  });
+
+  @override
+  State<DetailRekomendasiPage> createState() =>
+      _DetailRekomendasiPageState();
+}
+
+class _DetailRekomendasiPageState extends State<DetailRekomendasiPage> {
+  Future<void> tambahKeranjang({
+    bool forceReplace = false,
+  }) async {
+    try {
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      String? token =
+          prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse(
+          "${ApiService.baseUrl}/api/keranjang/tambah",
+        ),
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization":
+              "Bearer $token",
+        },
+        body: jsonEncode({
+          "makanan_id":
+              widget.food["id"],
+          "jumlah": 1,
+          "force_replace":
+              forceReplace,
+        }),
+      );
+
+      final data =
+          jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        Fluttertoast.showToast(
+          msg: data["message"],
+        );
+      }
+
+      else if (
+          response.statusCode == 409 &&
+          data["seller_berbeda"] ==
+              true) {
+
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              backgroundColor:
+                  Colors.white,
+
+              title: const Text(
+                "Seller Berbeda",
+              ),
+
+              content: const Text(
+                "Keranjang Anda berisi produk dari toko lain.\n\nHapus keranjang lama dan ganti dengan produk baru?",
+              ),
+
+              actions: [
+
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(
+                      context,
+                    );
+                  },
+                  child: const Text(
+                    "Batal",
+                  ),
+                ),
+
+                ElevatedButton(
+                  style:
+                      ElevatedButton
+                          .styleFrom(
+                    backgroundColor:
+                        Colors.orange,
+                    foregroundColor:
+                        Colors.white,
+                  ),
+                  onPressed: () async {
+
+                    Navigator.pop(
+                      context,
+                    );
+
+                    await tambahKeranjang(
+                      forceReplace:
+                          true,
+                    );
+                  },
+                  child: const Text(
+                    "Hapus & Ganti",
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      }
+
+      else {
+
+        Fluttertoast.showToast(
+          msg:
+              data["message"] ??
+              "Gagal tambah keranjang",
+        );
+      }
+
+    } catch (e) {
+
+      Fluttertoast.showToast(
+        msg: e.toString(),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    double rating = item["ratings_avg_nilai"] == null
+    final rating =
+    double.parse(
+      (widget.food["ratings_avg_nilai"] ?? 0)
+          .toString(),
+    );
 
-      ? 0.0
-
-      : double.parse(
-          item["ratings_avg_nilai"]
-              .toString(),
-        );
-
-    final List<Map<String, dynamic>>
-    reviews =
-
+    final totalRating =
+    widget.food["ratings_count"] ?? 0;
+    final reviews =
     List<Map<String, dynamic>>.from(
-      item["ratings"] ?? [],
+      widget.food["ratings"] ?? [],
     );
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -34,7 +164,7 @@ class DetailMenuPage extends StatelessWidget {
               Stack(
                 children: [
                   Image.network(
-                    "${ApiService.baseUrl}/storage/${item["gambar_makanan"]}",
+                    "${ApiService.baseUrl}/storage/${widget.food["gambar_makanan"]}",
                     height: 280,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -96,7 +226,7 @@ class DetailMenuPage extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      item["nama_makanan"],
+                                      widget.food["nama_makanan"],
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -108,7 +238,7 @@ class DetailMenuPage extends StatelessWidget {
                                       locale: 'id_ID',
                                       symbol: 'Rp ',
                                       decimalDigits: 0,
-                                    ).format(item["harga"]),
+                                    ).format(widget.food["harga"]),
                                     style: const TextStyle(
                                       fontSize: 20,
                                       color: Colors.orange,
@@ -118,71 +248,100 @@ class DetailMenuPage extends StatelessWidget {
                                 ],
                               ),
 
+                              const SizedBox(height: 6),
+
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.auto_awesome,
+                                      color: Colors.orange,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        widget.food['ai_reason'],
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
                               const SizedBox(height: 8),
-                              
+
                               Row(
                                 children: [
 
-                                   ...List.generate(5, (index) {
+                                  ...List.generate(5, (index) {
 
-                                    if (index < rating.floor()) {
+                                     if (index < rating.floor()) {
+
+                                        return const Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                          size: 16,
+                                        );
+
+                                      } else if (
+
+                                        index < rating &&
+                                        rating % 1 >= 0.5
+
+                                      ) {
+
+                                        return const Icon(
+                                          Icons.star_half,
+                                          color: Colors.amber,
+                                          size: 16,
+                                        );
+                                      }
 
                                       return const Icon(
-                                        Icons.star,
+                                        Icons.star_border,
                                         color: Colors.amber,
                                         size: 16,
                                       );
-
-                                    } else if (
-
-                                      index < rating &&
-                                      rating % 1 >= 0.5
-
-                                    ) {
-
-                                      return const Icon(
-                                        Icons.star_half,
-                                        color: Colors.amber,
-                                        size: 16,
-                                      );
-                                    }
-
-                                    return const Icon(
-                                      Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 16,
-                                    );
                                   }),
 
                                   const SizedBox(width: 6),
 
                                   Text(
 
-                                    item["ratings_avg_nilai"] == null
+                                    totalRating == 0
 
-                                        ? "0.0"
+                                        ? "Belum ada ulasan"
 
-                                        : double.parse(
-                                            item["ratings_avg_nilai"]
-                                                .toString(),
-                                          ).toStringAsFixed(1),
+                                        : rating.toStringAsFixed(1),
 
                                     style: const TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
 
-                                  const SizedBox(width: 4),
+                                  if (totalRating != 0) ...[
 
-                                  Text(
-                                    "(${item["ratings_count"]})",
+                                    const SizedBox(width: 4),
 
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
+                                    Text(
+                                      "($totalRating)",
+
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 12,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
 
@@ -190,18 +349,29 @@ class DetailMenuPage extends StatelessWidget {
 
                               Row(
                                 children: [
+
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
                                     ),
+
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.1,
+                                      ),
+
+                                      borderRadius:
+                                          BorderRadius.circular(8),
+                                    ),
+
                                     child: Text(
-                                      item["kategori"]["nama_kategori"],
+                                      widget.food["kategori"]["nama_kategori"],
+
                                       style: const TextStyle(
                                         color: Colors.orange,
                                         fontSize: 12,
-                                        fontWeight: FontWeight.w600, 
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
@@ -212,18 +382,23 @@ class DetailMenuPage extends StatelessWidget {
                                     radius: 12,
 
                                     backgroundImage: NetworkImage(
-                                      "${ApiService.baseUrl}/storage/${item["seller"]["foto_toko"]}",
+                                      "${ApiService.baseUrl}/storage/${widget.food["seller"]["foto_toko"]}",
                                     ),
                                   ),
 
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 8),
 
-                                  Text(
-                                    item["seller"]["nama_toko"],
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Text(
+                                      widget.food["seller"]["nama_toko"],
+
+                                      overflow: TextOverflow.ellipsis,
+
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -267,10 +442,10 @@ class DetailMenuPage extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  buildInfo(Icons.local_fire_department, "Kalori", "${item["kalori"]} kcal", Colors.orange),
-                                  buildInfo(Icons.set_meal, "Protein", "${item["protein"]} g", Colors.blue),
-                                  buildInfo(Icons.water_drop, "Lemak", "${item["lemak"]} g", Colors.red),
-                                  buildInfo(Icons.grain, "Karbo", "${item["karbohidrat"]} g", Colors.green),
+                                  buildInfo(Icons.local_fire_department, "Kalori", "${widget.food["kalori"]} kcal", Colors.orange),
+                                  buildInfo(Icons.set_meal, "Protein", "${widget.food["protein"]} g", Colors.blue),
+                                  buildInfo(Icons.water_drop, "Lemak", "${widget.food["lemak"]} g", Colors.red),
+                                  buildInfo(Icons.grain, "Karbo", "${widget.food["karbohidrat"]} g", Colors.green),
                                 ],
                               ),
                             ],
@@ -310,7 +485,7 @@ class DetailMenuPage extends StatelessWidget {
                               const SizedBox(height: 10),
 
                               Text(
-                                item["deskripsi"],
+                                widget.food["deskripsi"],
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   height: 1.5,
@@ -357,7 +532,7 @@ class DetailMenuPage extends StatelessWidget {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => AllReviewsPage(reviews: reviews),
+                                          builder: (_) => AllReviewsPage(reviews: List<Map<String, dynamic>>.from(widget.food["ratings"] ?? [],),),
                                         ),
                                       );
                                     },
@@ -375,7 +550,7 @@ class DetailMenuPage extends StatelessWidget {
                               const SizedBox(height: 12),
 
                               Column(
-                                children: reviews.take(3).map((review) {
+                                children:  reviews.take(3).map((review) {
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 10),
                                     padding: const EdgeInsets.all(10),
@@ -389,40 +564,10 @@ class DetailMenuPage extends StatelessWidget {
                                         CircleAvatar(
                                           radius: 20,
 
-                                          backgroundColor:
-                                              Colors.orange.withValues(
-                                            alpha: 0.2,
+                                          backgroundImage: NetworkImage(
+
+                                            "${ApiService.baseUrl}/storage/${review["user"]["profile"]}",
                                           ),
-
-                                          backgroundImage:
-
-                                              review['user']['profile']
-                                                          != null
-
-                                                  ? NetworkImage(
-                                                      "${ApiService.baseUrl}/storage/${review['user']['profile']}",
-                                                    )
-
-                                                  : null,
-
-                                          child:
-                                              review['user']['profile']
-                                                          == null
-
-                                                  ? Text(
-
-                                                      review['user']
-                                                          ["username"][0]
-                                                              .toUpperCase(),
-
-                                                      style: const TextStyle(
-                                                        color: Colors.orange,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    )
-
-                                                  : null,
                                         ),
 
                                         const SizedBox(width: 10),
@@ -506,6 +651,26 @@ class DetailMenuPage extends StatelessWidget {
                             ],
                           ),
                         ),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () {
+                              tambahKeranjang();
+                            },
+                            child: const Text(
+                              "Tambah ke Keranjang",
+                              style: TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),

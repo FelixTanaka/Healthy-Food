@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile/services/step_service.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:mobile/Pages/detailrekomendasi.dart';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
@@ -39,7 +40,7 @@ class HomeContentState extends State<HomeContent> {
   List kategoriList = [];
   List makananPopuler = [];
   List makananRekomendasi = [];
-
+  bool isLoadingAI = false;
   int stepsRealtime = 0;
   double kaloriTerbakar = 0;
   final StepService stepService = StepService();
@@ -248,6 +249,9 @@ class HomeContentState extends State<HomeContent> {
   }
 
   Future<void> getRekomendasi() async {
+    setState(() {
+      isLoadingAI = true;
+    });
     try {
       final prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
@@ -265,9 +269,13 @@ class HomeContentState extends State<HomeContent> {
 
         setState(() {
           makananRekomendasi = data['data'];
+          isLoadingAI = false;
         });
       }
     } catch (e) {
+      setState(() {
+        isLoadingAI = false;
+      });
       debugPrint(e.toString());
     }
   }
@@ -654,7 +662,28 @@ class HomeContentState extends State<HomeContent> {
 
        SizedBox(
         height: 240,
-        child: ListView.builder(
+  child: isLoadingAI
+      ? const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: Colors.orange,
+              ),
+              SizedBox(height: 12),
+              Text(
+                "🤖 AI sedang memilih makanan terbaik...",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        )
+        : ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: makananRekomendasi.length,
@@ -664,7 +693,7 @@ class HomeContentState extends State<HomeContent> {
             return FoodRekomendasi(
               name: item['nama_makanan'],
               seller: item['seller']['nama_toko'],
-              price: "Rp ${item['harga']}",
+              price: item['harga'],
               rating: item['ratings_avg_nilai'] == null
                   ? 0
                   : double.parse(item['ratings_avg_nilai'].toString()),
@@ -673,11 +702,12 @@ class HomeContentState extends State<HomeContent> {
               sellerImage: "${ApiService.baseUrl}/storage/${item['seller']['foto_toko']}",
               kategori: item['kategori']['nama_kategori'],
               makananId: item['id'],
+              reason: item['ai_reason'] ?? "",
               onTap: () {
                Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => DetailMenuPage(
+                  builder: (_) => DetailRekomendasiPage(
                     food: item,
                   ),
                 ),
@@ -739,7 +769,7 @@ class HomeContentState extends State<HomeContent> {
             return FoodPopulerCard(
               name: item['nama_makanan'],
               seller: item['seller']['nama_toko'],
-              price: "Rp ${item['harga']}",
+              price: item['harga'],
               rating: item['ratings_avg_nilai'] == null
                   ? 0
                   : double.parse(
