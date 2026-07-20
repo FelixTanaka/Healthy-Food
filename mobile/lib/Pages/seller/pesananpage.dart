@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:open_filex/open_filex.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:pdf/pdf.dart';
+import 'package:intl/intl.dart';
 
 class PesananPage extends StatefulWidget {
   const PesananPage({super.key});
@@ -849,7 +850,11 @@ class PesananPageState extends State<PesananPage> {
                       ),
 
                       Text(
-                        "Rp ${item["total"]}",
+                        NumberFormat.currency(
+                          locale: 'id_ID',
+                          symbol: 'Rp ',
+                          decimalDigits: 0,
+                        ).format(item["total"]),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.orange,

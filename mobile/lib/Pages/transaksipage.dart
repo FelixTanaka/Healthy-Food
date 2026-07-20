@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/Pages/alamatpage.dart';
+import 'package:intl/intl.dart';
 
 class TransaksiPage extends StatefulWidget {
   const TransaksiPage({super.key});
@@ -269,14 +270,22 @@ class _TransaksiPageState extends State<TransaksiPage> {
                               const SizedBox(height: 4),
 
                               Text(
-                                '${item['jumlah']} x Rp ${item['makanan']['harga']}',
+                                 '${item['jumlah']} x ${NumberFormat.currency(
+                                  locale: 'id_ID',
+                                  symbol: 'Rp ',
+                                  decimalDigits: 0,
+                                ).format(item['makanan']['harga'])}',
                               ),
                             ],
                           ),
                         ),
 
                         Text(
-                          'Rp ${item['jumlah'] * item['makanan']['harga']}',
+                          NumberFormat.currency(
+                            locale: 'id_ID',
+                            symbol: 'Rp ',
+                            decimalDigits: 0,
+                          ).format(item['jumlah'] * item['makanan']['harga']),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
@@ -293,7 +302,13 @@ class _TransaksiPageState extends State<TransaksiPage> {
                       MainAxisAlignment.spaceBetween,
                   children: [
                     const Text("Subtotal"),
-                    Text("Rp $subtotal"),
+                    Text(
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(subtotal),
+                    ),
                   ],
                 ),
 
@@ -304,7 +319,13 @@ class _TransaksiPageState extends State<TransaksiPage> {
                       MainAxisAlignment.spaceBetween,
                   children: [
                     const Text("Biaya Admin"),
-                    Text("Rp $biayaAdmin"),
+                    Text(
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(biayaAdmin),
+                    ),
                   ],
                 ),
 
@@ -323,7 +344,11 @@ class _TransaksiPageState extends State<TransaksiPage> {
                     ),
 
                     Text(
-                      'Rp ${subtotal + biayaAdmin}',
+                       NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(subtotal + biayaAdmin),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.orange,

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class FoodPopulerCard extends StatelessWidget {
   final String name;
   final String seller;
-  final String price;
+  final int price;
   final double rating;
   final String image;
   final String kategori;
@@ -148,7 +149,11 @@ class FoodPopulerCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            price,
+                            NumberFormat.currency(
+                              locale: 'id_ID',
+                              symbol: 'Rp ',
+                              decimalDigits: 0,
+                            ).format(price),
                             style: const TextStyle(
                               color: Colors.orange,
                               fontWeight: FontWeight.bold,

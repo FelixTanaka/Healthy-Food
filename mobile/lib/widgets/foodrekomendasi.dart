@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class FoodRekomendasi extends StatelessWidget {
   final String name;
   final String seller;
-  final String price;
+  final int price;
   final double rating;
   final int totalRating;
   final String image;
@@ -12,6 +13,7 @@ class FoodRekomendasi extends StatelessWidget {
   final VoidCallback onTap;
   final int makananId;
   final VoidCallback onAdd;
+  final String reason;
 
   const FoodRekomendasi({
     super.key,
@@ -26,6 +28,7 @@ class FoodRekomendasi extends StatelessWidget {
     required this.onTap,
     required this.makananId,
     required this.onAdd,
+    required this.reason,
   });
 
   @override
@@ -161,7 +164,11 @@ class FoodRekomendasi extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    price,
+                    NumberFormat.currency(
+                      locale: 'id_ID',
+                      symbol: 'Rp ',
+                      decimalDigits: 0,
+                    ).format(price),
                     style: const TextStyle(
                       color: Colors.orange,
                       fontWeight: FontWeight.bold,

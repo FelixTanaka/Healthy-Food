@@ -706,7 +706,15 @@ export default function Transaksi() {
                                 </p>
                             </div>
 
+                            <div>
+                                <p className="text-gray-500">
+                                    Status Order
+                                </p>
 
+                                <p className="font-medium">
+                                    {selectedTransaksi.status_order}
+                                </p>
+                            </div>
 
                             <div>
                                 <p className="text-gray-500">
@@ -717,13 +725,7 @@ export default function Transaksi() {
                                     {selectedTransaksi.metode_transaksi}
                                 </p>
                             </div>
-
-
                         </div>
-
-
-
-
 
                         <h3 className="font-semibold mb-3">
                             Detail Pesanan

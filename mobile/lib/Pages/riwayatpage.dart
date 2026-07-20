@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:intl/intl.dart';
 
 class RiwayatPage extends StatefulWidget {
   const RiwayatPage({super.key});
@@ -71,7 +72,7 @@ class RiwayatPageState extends State<RiwayatPage> {
                 item['status_order'],
 
               "total_harga":
-                  "Rp ${item['total_harga']}",
+                  item['total_harga'],
 
               "penerima":
                   item['user']['username'],
@@ -85,12 +86,9 @@ class RiwayatPageState extends State<RiwayatPage> {
               "order_items":
                   item['order_items'],
 
-              "biaya_admin":
-                "Rp ${(item['subtotal'] * 0.10).toInt()}",
-
-              "subtotal":
-                "Rp ${item['subtotal']}",
-              "ongkir" : "Rp ${(item['ongkir'])}",      
+              "biaya_admin": (item['subtotal'] * 0.10).toInt(),
+              "subtotal": item['subtotal'],
+              "ongkir": item['ongkir'],     
             };
 
           }).toList();
@@ -272,7 +270,11 @@ class RiwayatPageState extends State<RiwayatPage> {
                 ),
 
                 Text(
-                  item["total_harga"],
+                  NumberFormat.currency(
+                    locale: 'id_ID',
+                    symbol: 'Rp ',
+                    decimalDigits: 0,
+                  ).format(item["total_harga"]),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

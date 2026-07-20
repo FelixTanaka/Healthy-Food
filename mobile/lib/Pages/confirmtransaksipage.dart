@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/Pages/pembayaranberhasil.dart';
 import 'package:mobile/Pages/pembayarangagal.dart';
+import 'package:intl/intl.dart';
 
 class ConfirmTransaksiPage extends StatefulWidget {
   final Map<String, dynamic> selectedAddress;
@@ -301,14 +302,22 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
                               const SizedBox(height: 4),
 
                               Text(
-                                "${item['jumlah']} x Rp ${item['makanan']['harga']}",
+                                "${item['jumlah']} x ${NumberFormat.currency(
+                                  locale: 'id_ID',
+                                  symbol: 'Rp ',
+                                  decimalDigits: 0,
+                                ).format(item['makanan']['harga'])}",
                               ),
                             ],
                           ),
                         ),
 
                         Text(
-                          "Rp ${item['jumlah'] * item['makanan']['harga']}",
+                          NumberFormat.currency(
+                            locale: 'id_ID',
+                            symbol: 'Rp ',
+                            decimalDigits: 0,
+                          ).format(item['jumlah'] * item['makanan']['harga']),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
@@ -335,7 +344,13 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Subtotal"),
-                    Text("Rp ${widget.subtotal}"),
+                    Text(
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(widget.subtotal),
+                    ),
                   ],
                 ),
                 SizedBox(height: 8),
@@ -343,7 +358,13 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Biaya Admin"),
-                    Text("Rp ${widget.biayaAdmin}"),
+                    Text(
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(widget.biayaAdmin),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -351,7 +372,13 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text("Ongkir"),
-                    Text("Rp $ongkir"),
+                    Text(
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(ongkir),
+                    ),
                   ],
                 ),
                 Divider(height: 20),
@@ -363,8 +390,12 @@ class ConfirmTransaksiPageState extends State<ConfirmTransaksiPage> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      "Rp ${widget.subtotal + widget.biayaAdmin + ongkir}",
-                      style: TextStyle(
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(widget.subtotal + widget.biayaAdmin + ongkir),
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.orange,
                         fontSize: 16,

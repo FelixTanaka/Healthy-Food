@@ -9,6 +9,7 @@ import 'package:mobile/Pages/beriulasanpage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class DetailRiwayatPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -684,11 +685,13 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                                       height: 4),
 
                                   Text(
-                                    "${item["jumlah"]} x Rp ${makanan["harga"]}",
-
+                                    "${item["jumlah"]} x ${NumberFormat.currency(
+                                      locale: 'id_ID',
+                                      symbol: 'Rp ',
+                                      decimalDigits: 0,
+                                    ).format(makanan["harga"])}",
                                     style: TextStyle(
-                                      color:
-                                          Colors.grey[600],
+                                      color: Colors.grey[600],
                                       fontSize: 12,
                                     ),
                                   ),
@@ -703,11 +706,13 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                               children: [
 
                                 Text(
-                                  "Rp ${item["jumlah"] * makanan["harga"]}",
-
+                                  NumberFormat.currency(
+                                    locale: 'id_ID',
+                                    symbol: 'Rp ',
+                                    decimalDigits: 0,
+                                  ).format(item["jumlah"] * makanan["harga"]),
                                   style: const TextStyle(
-                                    fontWeight:
-                                        FontWeight.bold,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
 
@@ -964,7 +969,11 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                     const Text("Subtotal"),
 
                     Text(
-                      data["subtotal"],
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(int.parse(data["subtotal"].toString())),
                     ),
                   ],
                 ),
@@ -982,7 +991,11 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                         "Biaya Admin"),
 
                     Text(
-                      data["biaya_admin"],
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(int.parse(data["biaya_admin"].toString())),
                     ),
                   ],
                 ),
@@ -1000,7 +1013,11 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                         "Ongkir"),
 
                     Text(
-                      data["ongkir"],
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(int.parse(data["ongkir"].toString())),
                     ),
                   ],
                 ),
@@ -1023,11 +1040,13 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                     ),
 
                     Text(
-                      data["total_harga"],
-
+                      NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(int.parse(data["total_harga"].toString())),
                       style: const TextStyle(
-                        fontWeight:
-                            FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                         color: Colors.orange,
                       ),
                     ),

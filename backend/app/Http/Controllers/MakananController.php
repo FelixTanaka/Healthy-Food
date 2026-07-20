@@ -445,6 +445,8 @@ class MakananController extends Controller
     {
         $user = auth()->user();
 
+        $profile = $user->healthProfile;
+
         $goal = $user->healthProfile->goal;
 
         $query = Makanan::with(['kategori', 'seller', 'ratings.user'])
@@ -452,47 +454,187 @@ class MakananController extends Controller
             ->withCount('ratings');
 
         if ($goal === 'vegetarian') {
-            $query->whereHas('kategori', function ($q) {
-                $q->where('nama_kategori', 'vegetarian');
-            });
-
-            $data = $query->inRandomOrder()->limit(5)->get();
-        }
-
-        elseif ($goal === 'lose_weight') {
 
             $foods = $query
-                ->orderBy('kalori', 'asc')
+                ->whereHas('kategori', function ($q) {
+                    $q->where('nama_kategori', 'vegetarian');
+                })
                 ->limit(20)
                 ->get();
 
-            $data = $foods->random(min(5, $foods->count()));
-        }
-
-        elseif ($goal === 'gain_weight') {
+        } elseif ($goal === 'lose_weight') {
 
             $foods = $query
-                ->orderByDesc('kalori')
-                ->orderByDesc('protein')
+            ->whereHas('kategori', function ($q) {
+                $q->where('nama_kategori', 'Low Calorie');
+            })
+                ->orderBy('kalori')
                 ->limit(20)
                 ->get();
 
-            $data = $foods->random(min(5, $foods->count()));
-        }
-
-        else {
+        } elseif ($goal === 'gain_weight') {
 
             $foods = $query
+            ->whereHas('kategori', function ($q) {
+                $q->where('nama_kategori', 'High Protein');
+            })
+            ->orderByDesc('protein')
+            ->orderByDesc('kalori')
+            ->limit(20)
+            ->get();
+
+        } else {
+
+            $foods = $query
+                ->whereHas('kategori', function ($q) {
+                    $q->where('nama_kategori', 'Balanced');
+                })
                 ->orderByDesc('ratings_avg_nilai')
                 ->limit(20)
                 ->get();
 
-            $data = $foods->random(min(5, $foods->count()));
         }
+
+        $foodList = $foods->map(function ($food) {
+            return [
+                'id' => $food->id,
+                'nama' => $food->nama_makanan,
+                'deskripsi' => $food->deskripsi,
+                'harga' => $food->harga,
+                'kalori' => $food->kalori,
+                'protein' => $food->protein,
+                'lemak' => $food->lemak,
+                'karbohidrat' => $food->karbohidrat,
+            ];
+        });
+
+        $prompt = "
+            Kamu adalah ahli nutrisi.
+
+            Profil pengguna:
+
+            Umur: {$profile->umur}
+            Jenis Kelamin: {$profile->jenis_kelamin}
+            Berat: {$profile->berat}
+            Tinggi: {$profile->tinggi}
+            Goal: {$profile->goal}
+
+            Target Kalori: {$profile->kalori}
+            Target Protein: {$profile->protein}
+            Target Lemak: {$profile->lemak}
+            Target Karbohidrat: {$profile->karbo}
+
+            Daftar makanan:
+
+            " . json_encode($foodList, JSON_PRETTY_PRINT) . "
+
+            Pilih 5 makanan terbaik.
+
+            Pertimbangkan:
+            - Goal pengguna
+            - Kalori
+            - Protein
+            - Lemak
+            - Karbohidrat
+            - Harga
+
+            Aturan:
+
+            1. Pilih tepat 5 makanan terbaik.
+            2. Prioritaskan makanan yang paling sesuai dengan goal pengguna.
+            3. Pertimbangkan target kalori, protein, lemak, dan karbohidrat.
+            4. Jangan memilih makanan yang sama dua kali.
+            5. Jangan membuat ID baru.
+            6. Gunakan hanya ID yang ada pada daftar makanan.
+            7. Kembalikan HANYA JSON tanpa markdown.
+            8. Reason maksimal 25 kata.
+            9. Setiap reason HARUS berbeda untuk setiap makanan.
+            10. Jelaskan alasan berdasarkan keunggulan masing-masing makanan, misalnya kandungan protein, kalori, lemak sehat, karbohidrat, atau harga.
+            11. Jangan mengulang kalimat atau alasan yang sama pada lebih dari satu makanan.
+            12. Jangan tambahkan penjelasan lain selain JSON.
+
+            Jawab HANYA dalam format JSON seperti berikut:
+
+            [
+            {
+            \"id\":1,
+            \"reason\":\"...\"
+            }
+            ]
+        ";
+
+        $response = Http::post(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . env('GEMINI_API_KEY'),
+            [
+                "contents" => [
+                    [
+                        "parts" => [
+                            [
+                                "text" => $prompt
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        );
+
+        if (!$response->successful()) {
+
+            return response()->json([
+                "message"=>"Gemini gagal."
+            ],500);
+
+        }
+
+        $reply = $response['candidates'][0]['content']['parts'][0]['text'];
+
+        $reply = str_replace("```json", "", $reply);
+        $reply = str_replace("```", "", $reply);
+        $reply = trim($reply);
+
+        $result = json_decode($reply, true);
+
+        if (!$result || !is_array($result)) {
+
+            return response()->json([
+                "message" => "Format jawaban Gemini tidak valid.",
+                "reply" => $reply
+            ], 500);
+        }
+        
+        $result = collect($result)
+            ->unique('id')
+            ->values()
+            ->toArray();
+
+        $ids = collect($result)->pluck('id')->toArray();
+
+        $foods = Makanan::with(['kategori', 'seller', 'ratings.user'])
+            ->withAvg('ratings', 'nilai')
+            ->withCount('ratings')
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $data = [];
+
+        foreach ($result as $item) {
+
+            if (!isset($foods[$item['id']])) {
+                continue;
+            }
+
+            $food = $foods[$item['id']];
+
+            $food->ai_reason = $item['reason'];
+
+            $data[] = $food;
+        }    
 
         return response()->json([
             'message' => 'Rekomendasi berhasil diambil',
             'goal' => $goal,
+            "generated_by" => "Gemini 2.5 Flash",
             'data' => $data
         ]);
     }

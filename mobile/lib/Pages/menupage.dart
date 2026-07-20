@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -426,7 +427,7 @@ class MenuPageState extends State<MenuPage> {
                             children: [
 
                               Text(
-                                "Rp ${food["harga"]}",
+                                "Rp ${NumberFormat('#,##0', 'id_ID').format(food["harga"])}",
                                 style: const TextStyle(
                                   color: Colors.orange,
                                   fontWeight: FontWeight.bold,

@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 
 class DetailMenuPage extends StatefulWidget {
   final Map<String, dynamic> food;
@@ -233,7 +234,11 @@ class _DetailMenuPageState extends State<DetailMenuPage> {
                                     ),
                                   ),
                                   Text(
-                                     "Rp ${widget.food["harga"]}",
+                                     NumberFormat.currency(
+                                      locale: 'id_ID',
+                                      symbol: 'Rp ',
+                                      decimalDigits: 0,
+                                    ).format(widget.food["harga"]),
                                     style: const TextStyle(
                                       fontSize: 20,
                                       color: Colors.orange,
