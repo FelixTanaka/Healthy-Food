@@ -27,7 +27,7 @@ class ProfilePageState extends State<ProfilePage> {
   String tinggiBadan = "";
   String umur = "";
   String jenisKelamin = "";
-  String goal = "";
+  String activityLevel = "";
   File? profileImage;
 
   String profile = "";
@@ -147,7 +147,7 @@ class ProfilePageState extends State<ProfilePage> {
           umur = health['umur'].toString();
 
           jenisKelamin = health['jenis_kelamin'];
-          goal = health['goal'];
+          activityLevel = health['activity_level'];
         });
       }
 
@@ -161,7 +161,7 @@ class ProfilePageState extends State<ProfilePage> {
     String? tinggi,
     String? umurBaru,
     String? jenisKelaminBaru,
-    String? goalBaru,
+    String? activityLevelBaru,
   }) async {
 
     try {
@@ -182,7 +182,8 @@ class ProfilePageState extends State<ProfilePage> {
           if (umurBaru != null) "umur": umurBaru,
           if (jenisKelaminBaru != null)
             "jenis_kelamin": jenisKelaminBaru,
-          if (goalBaru != null) "goal": goalBaru,
+           if (activityLevelBaru != null)
+            "activity_level": activityLevelBaru,
         },
       );
 
@@ -738,8 +739,10 @@ class ProfilePageState extends State<ProfilePage> {
           ),
 
           buildProfileItem(
-            label: "Goal",
-            value: goal.isEmpty ? "normal" : goal,
+            label: "Tingkat Aktivitas",
+            value: activityLevel.isEmpty
+                ? "sangat_ringan"
+                : activityLevel,
             icon: Icons.track_changes,
             onTap: () {
               showModalBottomSheet(
@@ -750,15 +753,15 @@ class ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-
                         ListTile(
-                          leading: const Icon(Icons.restaurant),
-                          title: const Text("Normal"),
+                          leading: const Icon(Icons.airline_seat_recline_normal),
+                          title: const Text("Sangat Ringan"),
+                          subtitle: const Text("Jarang berolahraga atau sebagian besar aktivitas dilakukan dengan duduk."),
                           onTap: () {
-                            updateHealthProfile(goalBaru: "normal");
+                            updateHealthProfile(activityLevelBaru: "sangat_ringan");
 
                             setState(() {
-                              goal = "normal";
+                              activityLevel = "sangat_ringan";
                             });
 
                             Navigator.pop(context);
@@ -766,13 +769,29 @@ class ProfilePageState extends State<ProfilePage> {
                         ),
 
                         ListTile(
-                          leading: const Icon(Icons.eco),
-                          title: const Text("Vegetarian"),
+                          leading: const Icon(Icons.directions_walk),
+                          title: const Text("Ringan"),
+                          subtitle: const Text("Olahraga ringan 1-3 kali per minggu."),
                           onTap: () {
-                            updateHealthProfile(goalBaru: "vegetarian");
+                            updateHealthProfile(activityLevelBaru: "ringan");
 
                             setState(() {
-                              goal = "vegetarian";
+                              activityLevel = "ringan";
+                            });
+
+                            Navigator.pop(context);
+                          },
+                        ),
+
+                        ListTile(
+                          leading: const Icon(Icons.directions_run),
+                          title: const Text("Sedang"),
+                          subtitle: const Text("Olahraga sedang 3-5 kali per minggu."),
+                          onTap: () {
+                            updateHealthProfile(activityLevelBaru: "sedang");
+
+                            setState(() {
+                              activityLevel = "sedang";
                             });
 
                             Navigator.pop(context);
@@ -781,12 +800,13 @@ class ProfilePageState extends State<ProfilePage> {
 
                         ListTile(
                           leading: const Icon(Icons.fitness_center),
-                          title: const Text("Naik Berat Badan"),
+                          title: const Text("Berat"),
+                          subtitle: const Text("Olahraga berat 6-7 kali per minggu."),
                           onTap: () {
-                            updateHealthProfile(goalBaru: "gain_weight");
+                            updateHealthProfile(activityLevelBaru: "berat");
 
                             setState(() {
-                              goal = "gain_weight";
+                              activityLevel = "berat";
                             });
 
                             Navigator.pop(context);
@@ -794,13 +814,14 @@ class ProfilePageState extends State<ProfilePage> {
                         ),
 
                         ListTile(
-                          leading: const Icon(Icons.monitor_weight),
-                          title: const Text("Turun Berat Badan"),
+                          leading: const Icon(Icons.sports_gymnastics),
+                          title: const Text("Sangat Berat"),
+                          subtitle: const Text("Atlet atau aktivitas fisik sangat berat (dua kali latihan per hari)."),
                           onTap: () {
-                            updateHealthProfile(goalBaru: "lose_weight");
+                            updateHealthProfile(activityLevelBaru: "sangat_berat");
 
                             setState(() {
-                              goal = "lose_weight";
+                              activityLevel = "sangat_berat";
                             });
 
                             Navigator.pop(context);

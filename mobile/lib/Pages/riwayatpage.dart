@@ -58,7 +58,7 @@ class RiwayatPageState extends State<RiwayatPage> {
               riwayat.map<Map<String, dynamic>>((item) {
 
             return {
-
+               "id": item["id"],
                "external_id":
                   item['external_id'],
 

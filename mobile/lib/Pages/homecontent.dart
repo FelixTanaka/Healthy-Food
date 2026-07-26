@@ -10,7 +10,6 @@ import 'package:mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:mobile/services/step_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:mobile/Pages/detailrekomendasi.dart';
 
@@ -43,21 +42,16 @@ class HomeContentState extends State<HomeContent> {
   bool isLoadingAI = false;
   int stepsRealtime = 0;
   double kaloriTerbakar = 0;
-  final StepService stepService = StepService();
 
   @override
   void initState() {
     super.initState();
     loadData();
-
-     requestPermission().then((_) {
-      initStep();
-    });
   }
 
   Future<void> loadData() async {
     await getHealthProfile();
-    await getNutrisiHarian();
+    await getNutrisiLocal();
     await getKategori();
     await getMakananPopuler();
     await getRekomendasi();
@@ -65,25 +59,6 @@ class HomeContentState extends State<HomeContent> {
 
   Future<void> requestPermission() async {
     await Permission.activityRecognition.request();
-  }
-
-  void initStep() async {
-    await stepService.initUserWeight(); 
-    listenStep();
-  }
-
-  void listenStep() {
-    stepService.stepStream.listen((data) {
-      setState(() {
-        stepsRealtime = data.steps;
-        kaloriTerbakar = data.calories;
-
-        netKalori = kaloriDikonsumsi - kaloriTerbakar.toInt();
-      });
-
-      print("STEP: $stepsRealtime | CAL: $kaloriTerbakar");
-      print("WEIGHT: ${stepService.weight}");
-    });
   }
 
   Future<void> getHealthProfile() async {
@@ -126,71 +101,67 @@ class HomeContentState extends State<HomeContent> {
     }
   }
 
-  Future<void> getNutrisiHarian() async {
+  Future<void> getNutrisiLocal() async {
 
-    try {
+    final prefs =
+        await SharedPreferences.getInstance();
 
-      final prefs =
-          await SharedPreferences.getInstance();
+    final today =
+        DateTime.now().toIso8601String().substring(0, 10);
 
-      String? token =
-          prefs.getString('token');
+    final lastDate =
+        prefs.getString("tanggal_nutrisi");
 
-      final response = await http.get(
-        Uri.parse(
-          '${ApiService.baseUrl}/api/nutrisi-harian',
-        ),
+    if (lastDate != today) {
 
-        headers: {
-          "Accept": "application/json",
-          "Authorization": "Bearer $token",
-        },
+      await prefs.setInt("kalori_harian", 0);
+      await prefs.setDouble("protein_harian", 0);
+      await prefs.setDouble("karbo_harian", 0);
+      await prefs.setDouble("lemak_harian", 0);
+
+      await prefs.setString(
+        "tanggal_nutrisi",
+        today,
       );
-
-      if (response.statusCode == 200) {
-
-        final data =
-            jsonDecode(response.body);
-
-        setState(() {
-
-          kaloriDikonsumsi =
-              data['kalori'];
-
-          proteinDikonsumsi =
-              data['protein'].toDouble();
-
-          karboDikonsumsi =
-              data['karbo'].toDouble();
-
-          lemakDikonsumsi =
-              data['lemak'].toDouble();
-
-          sisaKalori =
-            (kalori - kaloriDikonsumsi)
-                .clamp(0, kalori);
-
-          proteinPercent = protein > 0
-              ? (proteinDikonsumsi / protein)
-                  .clamp(0.0, 1.0)
-              : 0;
-
-          karboPercent = karbo > 0
-              ? (karboDikonsumsi / karbo)
-                  .clamp(0.0, 1.0)
-              : 0;
-
-          lemakPercent = lemak > 0
-              ? (lemakDikonsumsi / lemak)
-                  .clamp(0.0, 1.0)
-              : 0;
-        });
-      }
-
-    } catch (e) {
-
-      debugPrint(e.toString());
     }
+
+    setState(() {
+
+      kaloriDikonsumsi =
+          prefs.getInt("kalori_harian") ?? 0;
+
+      proteinDikonsumsi =
+          prefs.getDouble("protein_harian") ?? 0;
+
+      karboDikonsumsi =
+          prefs.getDouble("karbo_harian") ?? 0;
+
+      lemakDikonsumsi =
+          prefs.getDouble("lemak_harian") ?? 0;
+
+      sisaKalori =
+          (kalori - kaloriDikonsumsi)
+              .clamp(0, kalori);
+
+      proteinPercent = protein > 0
+          ? (proteinDikonsumsi / protein)
+              .clamp(0.0, 1.0)
+          : 0;
+
+      karboPercent = karbo > 0
+          ? (karboDikonsumsi / karbo)
+              .clamp(0.0, 1.0)
+          : 0;
+
+      lemakPercent = lemak > 0
+          ? (lemakDikonsumsi / lemak)
+              .clamp(0.0, 1.0)
+          : 0;
+
+      netKalori =
+          kaloriDikonsumsi - kaloriTerbakar.toInt();
+
+    });
   }
 
   Future<void> getKategori() async {
@@ -537,37 +508,6 @@ class HomeContentState extends State<HomeContent> {
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 10),
-
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.local_fire_department,
-                              size: 20,
-                              color: Colors.blueGrey,
-                            ),
-                            SizedBox(width: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Terbakar",
-                                  style: TextStyle(color: Colors.blueGrey),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  "${kaloriTerbakar.toInt()} kcal",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
                       ],
                     )
                   ],
@@ -588,11 +528,23 @@ class HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 10),
 
-                buildNutrisi("Protein", proteinPercent, "$proteinDikonsumsi g / $protein g"),
+                buildNutrisi(
+                  "Protein",
+                  proteinPercent,
+                  "${proteinDikonsumsi.toStringAsFixed(2)} g / ${protein.toStringAsFixed(2)} g",
+                ),
                 const SizedBox(height: 8),
-                buildNutrisi("Karbo", karboPercent, "$karboDikonsumsi g / $karbo g"),
+                buildNutrisi(
+                  "Karbo",
+                  karboPercent,
+                  "${karboDikonsumsi.toStringAsFixed(2)} g / ${karbo.toStringAsFixed(2)} g",
+                ),
                 const SizedBox(height: 8),
-                buildNutrisi("Lemak", lemakPercent, "$lemakDikonsumsi g / $lemak g"),
+                buildNutrisi(
+                  "Lemak",
+                  lemakPercent,
+                  "${lemakDikonsumsi.toStringAsFixed(2)} g / ${lemak.toStringAsFixed(2)} g",
+                ),
               ],
             ),
           ),
