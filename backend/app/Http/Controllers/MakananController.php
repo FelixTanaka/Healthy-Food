@@ -447,53 +447,10 @@ class MakananController extends Controller
 
         $profile = $user->healthProfile;
 
-        $goal = $user->healthProfile->goal;
-
-        $query = Makanan::with(['kategori', 'seller', 'ratings.user'])
+        $foods = Makanan::with(['kategori', 'seller', 'ratings.user'])
             ->withAvg('ratings', 'nilai')
-            ->withCount('ratings');
-
-        if ($goal === 'vegetarian') {
-
-            $foods = $query
-                ->whereHas('kategori', function ($q) {
-                    $q->where('nama_kategori', 'vegetarian');
-                })
-                ->limit(20)
-                ->get();
-
-        } elseif ($goal === 'lose_weight') {
-
-            $foods = $query
-            ->whereHas('kategori', function ($q) {
-                $q->where('nama_kategori', 'Low Calorie');
-            })
-                ->orderBy('kalori')
-                ->limit(20)
-                ->get();
-
-        } elseif ($goal === 'gain_weight') {
-
-            $foods = $query
-            ->whereHas('kategori', function ($q) {
-                $q->where('nama_kategori', 'High Protein');
-            })
-            ->orderByDesc('protein')
-            ->orderByDesc('kalori')
-            ->limit(20)
-            ->get();
-
-        } else {
-
-            $foods = $query
-                ->whereHas('kategori', function ($q) {
-                    $q->where('nama_kategori', 'Balanced');
-                })
-                ->orderByDesc('ratings_avg_nilai')
-                ->limit(20)
-                ->get();
-
-        }
+            ->withCount('ratings')
+            ->get();    
 
         $foodList = $foods->map(function ($food) {
             return [
@@ -517,7 +474,7 @@ class MakananController extends Controller
             Jenis Kelamin: {$profile->jenis_kelamin}
             Berat: {$profile->berat}
             Tinggi: {$profile->tinggi}
-            Goal: {$profile->goal}
+            Aktivitas Fisik: {$profile->activity_level}
 
             Target Kalori: {$profile->kalori}
             Target Protein: {$profile->protein}
@@ -531,17 +488,16 @@ class MakananController extends Controller
             Pilih 5 makanan terbaik.
 
             Pertimbangkan:
-            - Goal pengguna
-            - Kalori
-            - Protein
-            - Lemak
-            - Karbohidrat
-            - Harga
+            - Kedekatan kandungan kalori dengan target kalori pengguna.
+            - Kedekatan kandungan protein dengan target protein pengguna.
+            - Kedekatan kandungan lemak dengan target lemak pengguna.
+            - Kedekatan kandungan karbohidrat dengan target karbohidrat pengguna.
+            - Rating makanan.
 
             Aturan:
 
             1. Pilih tepat 5 makanan terbaik.
-            2. Prioritaskan makanan yang paling sesuai dengan goal pengguna.
+            2. Prioritaskan makanan yang paling mendekati target kalori, protein, lemak, dan karbohidrat pengguna.
             3. Pertimbangkan target kalori, protein, lemak, dan karbohidrat.
             4. Jangan memilih makanan yang sama dua kali.
             5. Jangan membuat ID baru.
@@ -633,7 +589,6 @@ class MakananController extends Controller
 
         return response()->json([
             'message' => 'Rekomendasi berhasil diambil',
-            'goal' => $goal,
             "generated_by" => "Gemini 2.5 Flash",
             'data' => $data
         ]);

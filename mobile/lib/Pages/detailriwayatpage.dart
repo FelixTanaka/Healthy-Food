@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/Pages/catatkonsumsipage.dart';
 
 class DetailRiwayatPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -296,7 +297,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                   pw.Text("Subtotal"),
 
                   pw.Text(
-                    data["subtotal"],
+                    data["subtotal"].toString(),
                   ),
                 ],
               ),
@@ -313,7 +314,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                   pw.Text("Biaya Admin"),
 
                   pw.Text(
-                    data["biaya_admin"],
+                    data["biaya_admin"].toString(),
                   ),
                 ],
               ),
@@ -330,7 +331,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                   pw.Text("Ongkir"),
 
                   pw.Text(
-                    data["ongkir"],
+                    data["ongkir"].toString(),
                   ),
                 ],
               ),
@@ -356,7 +357,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
                   ),
 
                   pw.Text(
-                    data["total_harga"],
+                    data["total_harga"].toString(),
 
                     style: pw.TextStyle(
                       fontWeight:
@@ -475,7 +476,7 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
   Widget build(BuildContext context) {
 
     final data = widget.data;
-
+    final bool orderSelesai = data["status_order"].toString().toLowerCase() == "selesai";
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
 
@@ -1058,37 +1059,57 @@ class _DetailRiwayatPageState extends State<DetailRiwayatPage> {
 
           const SizedBox(height: 12),
 
-          SizedBox(
-            width: double.infinity,
-
-            child: ElevatedButton.icon(
-
-              onPressed: () {
-                downloadPdf();
-              },
-
-              icon:
-                  const Icon(Icons.download),
-
-              label: const Text(
-                "Download Nota PDF",
-              ),
-
-              style:
-                  ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.orange,
-
-                foregroundColor:
-                    Colors.white,
-
-                padding:
-                    const EdgeInsets.symmetric(
-                  vertical: 14,
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    downloadPdf();
+                  },
+                  icon: const Icon(Icons.download, size: 20),
+                  label: const Text("Nota PDF"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-            ),
+
+              const SizedBox(width: 12),
+
+              if (orderSelesai)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CatatKonsumsiPage(
+                            orderItems: data["order_items"],
+                            orderId: data["id"],
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.restaurant, size: 20),
+                    label: const Text("Catat Konsumsi"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
+
           const SizedBox(height: 20),
         ],
       ),

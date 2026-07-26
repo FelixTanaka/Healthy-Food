@@ -20,7 +20,7 @@ class _HealthProfilePageState extends State<HealthProfilePage> {
   final umurController = TextEditingController();
 
   String? jenisKelamin;
-  String? goal;
+  String? activityLevel;
 
   Future<void> updateHealthProfile() async {
     if (beratController.text.isEmpty ||
@@ -48,7 +48,7 @@ class _HealthProfilePageState extends State<HealthProfilePage> {
           "tinggi": tinggiController.text,
           "umur": umurController.text,
           "jenis_kelamin": jenisKelamin,
-          "goal": goal,
+          "activity_level": activityLevel,
         },
       );
 
@@ -137,7 +137,7 @@ class _HealthProfilePageState extends State<HealthProfilePage> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     )
@@ -265,7 +265,7 @@ class _HealthProfilePageState extends State<HealthProfilePage> {
                     const Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        "Goal",
+                        "Tingkat Aktivitas",
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                         ),
@@ -275,34 +275,49 @@ class _HealthProfilePageState extends State<HealthProfilePage> {
                     const SizedBox(height: 8),
 
                     DropdownButtonFormField<String>(
-                      initialValue: goal,
+                      initialValue: activityLevel,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
                       ),
                       dropdownColor: Colors.white,
+                      isExpanded: true,
                       items: const [
                         DropdownMenuItem(
-                          value: "normal",
-                          child: Text("Normal"),
+                          value: "sangat_ringan",
+                          child: Text(
+                            "Sangat Ringan\n(Jarang berolahraga, aktivitas sehari-hari didominasi duduk)",
+                          ),
                         ),
                         DropdownMenuItem(
-                          value: "gain_weight",
-                          child: Text("Menambah Berat Badan"),
+                          value: "ringan",
+                          child: Text(
+                            "Ringan\n(Olahraga ringan 1-3 kali per minggu)",
+                          ),
                         ),
                         DropdownMenuItem(
-                          value: "lose_weight",
-                          child: Text("Menurunkan Berat Badan"),
+                          value: "sedang",
+                          child: Text(
+                            "Sedang\n(Olahraga sedang 3-5 kali per minggu)",
+                          ),
                         ),
                         DropdownMenuItem(
-                          value: "vegetarian",
-                          child: Text("Vegetarian"),
+                          value: "berat",
+                          child: Text(
+                            "Berat\n(Olahraga berat 6-7 kali per minggu)",
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: "sangat_berat",
+                          child: Text(
+                            "Sangat Berat\n(Atlet atau pekerjaan dengan aktivitas fisik sangat berat)",
+                          ),
                         ),
                       ],
                       onChanged: (value) {
                         setState(() {
-                          goal = value!;
+                          activityLevel = value!;
                         });
                       },
                     ),

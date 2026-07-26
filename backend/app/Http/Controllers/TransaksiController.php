@@ -544,4 +544,57 @@ class TransaksiController extends Controller
             'ongkir' => $ongkir,
         ]);
     }
+
+    public function catatKonsumsi(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|exists:orders,id',
+            'makanan_id' => 'required|exists:makanan,id',
+            'jumlah_konsumsi' => 'required|integer|min:1',
+        ]);
+
+        $userId = auth()->id();
+        
+        $order = Order::where('id', $request->order_id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'Transaksi tidak ditemukan.'
+            ], 404);
+        }
+
+        $orderItem = OrderItem::with('makanan')
+            ->where('order_id', $request->order_id)
+            ->where('makanan_id', $request->makanan_id)
+            ->first();
+
+        if (!$orderItem) {
+            return response()->json([
+                'message' => 'Makanan tidak ditemukan pada transaksi.'
+            ], 404);
+        }
+
+        if ($request->jumlah_konsumsi > $orderItem->jumlah) {
+            return response()->json([
+                'message' => 'Jumlah konsumsi melebihi jumlah yang dibeli.'
+            ], 400);
+        }
+
+        $makanan = $orderItem->makanan;
+
+        $totalKalori = $makanan->kalori * $request->jumlah_konsumsi;
+        $totalProtein = $makanan->protein * $request->jumlah_konsumsi;
+        $totalLemak = $makanan->lemak * $request->jumlah_konsumsi;
+        $totalKarbo = $makanan->karbohidrat * $request->jumlah_konsumsi;
+
+        return response()->json([
+            'message' => 'Konsumsi berhasil dicatat.',
+            'kalori' => $totalKalori,
+            'protein' => $totalProtein,
+            'lemak' => $totalLemak,
+            'karbohidrat' => $totalKarbo,
+        ]);
+    }
 }
