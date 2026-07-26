@@ -20,7 +20,7 @@ class HealthProfile extends Model
         'protein',
         'lemak',
         'karbo',
-        'goal',
+        'activity_level',
     ];
 
     public function user()

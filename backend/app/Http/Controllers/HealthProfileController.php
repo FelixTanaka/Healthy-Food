@@ -31,7 +31,7 @@ class HealthProfileController extends Controller
             'tinggi' => 'nullable|numeric',
             'umur' => 'nullable|numeric',
             'jenis_kelamin' => 'nullable|in:male,female',
-            'goal' => 'nullable|in:normal,gain_weight,lose_weight,vegetarian',
+            'activity_level' => 'nullable|in:sangat_ringan,ringan,sedang,berat,sangat_berat',
         ]);
 
         $health = HealthProfile::where('user_id', auth()->id())->first();
@@ -70,8 +70,8 @@ class HealthProfileController extends Controller
             $health->jenis_kelamin = $request->jenis_kelamin;
         }
 
-        if ($request->filled('goal')) {
-            $health->goal = $request->goal;
+        if ($request->filled('activity_level')) {
+            $health->activity_level = $request->activity_level;
         }
 
         $berat = $health->berat;
@@ -86,7 +86,19 @@ class HealthProfileController extends Controller
                 $bmr = (10 * $berat) + (6.25 * $tinggi) - (5 * $umur) - 161;
             }
 
-            $kalori = $bmr * 1.2;
+            if ($health->activity_level == 'sangat_ringan') {
+                $kalori = $bmr * 1.2;
+            } elseif ($health->activity_level == 'ringan') {
+                $kalori = $bmr * 1.375;
+            } elseif ($health->activity_level == 'sedang') {
+                $kalori = $bmr * 1.55;
+            } elseif ($health->activity_level == 'berat') {
+                $kalori = $bmr * 1.725;
+            } elseif ($health->activity_level == 'sangat_berat') {
+                $kalori = $bmr * 1.9;
+            } else {
+                $kalori = $bmr * 1.2;
+            }
 
             $protein = ($kalori * 0.30) / 4;
             $lemak = ($kalori * 0.25) / 9;
@@ -98,7 +110,7 @@ class HealthProfileController extends Controller
             'tinggi' => $tinggi,
             'umur' => $umur,
             'jenis_kelamin' => $gender,
-            'goal' => $health->goal,
+            'activity_level' => $health->activity_level,
 
             'kalori' => round($kalori),
             'protein' => round($protein, 2),

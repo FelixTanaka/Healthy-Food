@@ -58,8 +58,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/cek-order/{id}', [TransaksiController::class, 'cekStatusOrder']);
 
-    Route::get('/nutrisi-harian', [PembeliController::class, 'nutrisiHarian']);
-
     Route::get('/riwayat-transaksi', [TransaksiController::class, 'riwayatTransaksi']);
 
     Route::post('/rating', [RatingController::class, 'store']);
@@ -83,6 +81,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/ingredients/{id}/units', [MakananController::class, 'units']);
 
     Route::post('/hitung-ongkir', [TransaksiController::class, 'hitungOngkir']);
+
+    Route::post('/transaksi/catat-konsumsi', [TransaksiController::class, 'catatKonsumsi']);
 });
 
 Route::post('/xendit-callback', [TransaksiController::class, 'xenditCallback']);
