@@ -45,7 +45,7 @@ class UserController extends Controller
             'protein' => 0,
             'lemak' => 0,
             'karbo' => 0,
-            'goal' => null,
+            'activity_level' => null,
         ]);
 
         return response()->json([
@@ -220,7 +220,7 @@ class UserController extends Controller
                 'protein' => 0,
                 'lemak' => 0,
                 'karbo' => 0,
-                'goal' => 'normal',
+                'activity_level' => null,
             ]);
         }
 
