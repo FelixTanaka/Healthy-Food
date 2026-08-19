@@ -223,6 +223,7 @@ class HomeContentState extends State<HomeContent> {
     setState(() {
       isLoadingAI = true;
     });
+
     try {
       final prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
@@ -235,19 +236,36 @@ class HomeContentState extends State<HomeContent> {
         },
       );
 
+      debugPrint("STATUS REKOMENDASI: ${response.statusCode}");
+      debugPrint("BODY REKOMENDASI: ${response.body}");
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        if (mounted) {
+          setState(() {
+            makananRekomendasi = data['data'] ?? [];
+          });
+        }
+      } else {
+        debugPrint(
+          "Gagal mengambil rekomendasi: ${response.statusCode}",
+        );
+
+        if (mounted) {
+          setState(() {
+            makananRekomendasi = [];
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("ERROR REKOMENDASI: $e");
+    } finally {
+      if (mounted) {
         setState(() {
-          makananRekomendasi = data['data'];
           isLoadingAI = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        isLoadingAI = false;
-      });
-      debugPrint(e.toString());
     }
   }
 

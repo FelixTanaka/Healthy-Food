@@ -88,8 +88,7 @@ class KategoriController extends Controller
 
         $kategoriList = Kategori::with([
             'makanan' => function ($q) use ($seller) {
-                $q->where('seller_id', $seller->id)
-                ->where('status', 'dikonfirmasi');
+                $q->where('seller_id', $seller->id);
             }
         ])->get();
 
