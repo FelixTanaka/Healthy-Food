@@ -175,6 +175,126 @@ class MenuPageState extends State<MenuPage> {
     }
   }
 
+  Future<List<dynamic>> getLaporanKategori({
+    DateTime? mulai,
+    DateTime? selesai,
+  }) async {
+
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString("token");
+
+    String url = "${ApiService.baseUrl}/api/seller/laporan-kategori";
+
+    List<String> params = [];
+
+    if (mulai != null) {
+      params.add("tanggal_mulai=${mulai.toIso8601String().substring(0, 10)}");
+    }
+
+    if (selesai != null) {
+      params.add("tanggal_selesai=${selesai.toIso8601String().substring(0, 10)}");
+    }
+
+    if (params.isNotEmpty) {
+      url += "?${params.join("&")}";
+    }
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data["data"] ?? [];
+    }
+
+    return [];
+  }
+
+  Future<void> cetakLaporanSemuaKategori() async {
+    try {
+      final laporan = await getLaporanKategori(
+        mulai: tanggalMulai,
+        selesai: tanggalSelesai,
+      );
+
+      if (laporan.isEmpty) {
+        Fluttertoast.showToast(msg: "Tidak ada data laporan");
+        return;
+      }
+
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          build: (context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+
+                pw.Text(
+                  "Laporan Semua Kategori",
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+
+                pw.SizedBox(height: 10),
+
+                pw.Text(
+                  "Periode: "
+                  "${tanggalMulai == null ? '-' : '${tanggalMulai!.day}-${tanggalMulai!.month}-${tanggalMulai!.year}'}"
+                  " s/d "
+                  "${tanggalSelesai == null ? '-' : '${tanggalSelesai!.day}-${tanggalSelesai!.month}-${tanggalSelesai!.year}'}",
+                ),
+
+                pw.SizedBox(height: 20),
+
+                pw.TableHelper.fromTextArray(
+                  headers: [
+                    "No",
+                    "Kategori",
+                    "Total Menu",
+                    "Terjual",
+                    "Pendapatan",
+                  ],
+                  data: List.generate(laporan.length, (index) {
+                    final item = laporan[index];
+
+                    return [
+                      "${index + 1}",
+                      item["kategori"] ?? "-",
+                      item["jumlah_menu"].toString(),
+                      item["jumlah_terjual"].toString(),
+                      item["total_pendapatan"].toString(),
+                    ];
+                  }),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File("${dir.path}/laporan_kategori.pdf");
+
+      await file.writeAsBytes(await pdf.save());
+
+      OpenFilex.open(file.path);
+
+    } catch (e) {
+      debugPrint(e.toString());
+      Fluttertoast.showToast(msg: "Gagal membuat PDF");
+    }
+  }
+
   void tampilkanFilterLaporan() async {
     DateTime? tempMulai = tanggalMulai;
     DateTime? tempSelesai = tanggalSelesai;
@@ -299,126 +419,6 @@ class MenuPageState extends State<MenuPage> {
             rating.contains(query);
       }).toList();
     });
-  }
-
-  Future<List<dynamic>> getLaporanKategori({
-    DateTime? mulai,
-    DateTime? selesai,
-  }) async {
-
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString("token");
-
-    String url = "${ApiService.baseUrl}/api/seller/laporan-kategori";
-
-    List<String> params = [];
-
-    if (mulai != null) {
-      params.add("tanggal_mulai=${mulai.toIso8601String().substring(0, 10)}");
-    }
-
-    if (selesai != null) {
-      params.add("tanggal_selesai=${selesai.toIso8601String().substring(0, 10)}");
-    }
-
-    if (params.isNotEmpty) {
-      url += "?${params.join("&")}";
-    }
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        "Accept": "application/json",
-        "Authorization": "Bearer $token",
-      },
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 200) {
-      return data["data"] ?? [];
-    }
-
-    return [];
-  }
-
-  Future<void> cetakLaporanSemuaKategori() async {
-    try {
-      final laporan = await getLaporanKategori(
-        mulai: tanggalMulai,
-        selesai: tanggalSelesai,
-      );
-
-      if (laporan.isEmpty) {
-        Fluttertoast.showToast(msg: "Tidak ada data laporan");
-        return;
-      }
-
-      final pdf = pw.Document();
-
-      pdf.addPage(
-        pw.Page(
-          build: (context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-
-                pw.Text(
-                  "Laporan Semua Kategori",
-                  style: pw.TextStyle(
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-
-                pw.SizedBox(height: 10),
-
-                pw.Text(
-                  "Periode: "
-                  "${tanggalMulai == null ? '-' : '${tanggalMulai!.day}-${tanggalMulai!.month}-${tanggalMulai!.year}'}"
-                  " s/d "
-                  "${tanggalSelesai == null ? '-' : '${tanggalSelesai!.day}-${tanggalSelesai!.month}-${tanggalSelesai!.year}'}",
-                ),
-
-                pw.SizedBox(height: 20),
-
-                pw.TableHelper.fromTextArray(
-                  headers: [
-                    "No",
-                    "Kategori",
-                    "Total Menu",
-                    "Terjual",
-                    "Pendapatan",
-                  ],
-                  data: List.generate(laporan.length, (index) {
-                    final item = laporan[index];
-
-                    return [
-                      "${index + 1}",
-                      item["kategori"] ?? "-",
-                      item["jumlah_menu"].toString(),
-                      item["jumlah_terjual"].toString(),
-                      item["total_pendapatan"].toString(),
-                    ];
-                  }),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File("${dir.path}/laporan_kategori.pdf");
-
-      await file.writeAsBytes(await pdf.save());
-
-      OpenFilex.open(file.path);
-
-    } catch (e) {
-      debugPrint(e.toString());
-      Fluttertoast.showToast(msg: "Gagal membuat PDF");
-    }
   }
 
   Future<void> getKategori() async{
